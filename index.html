@@ -205,6 +205,19 @@ button{ font-family:inherit; cursor:pointer; }
 .vida-card{ border:1.5px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; background:var(--cream); }
 .vida-card h4{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--red); margin:0 0 12px; text-transform:uppercase; letter-spacing:.03em; }
 
+.pdf-frame-wrap{ border:1.5px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:6px; background:#525659; }
+.contract-pdf-frame{ width:100%; height:420px; border:none; display:block; background:#fff; }
+.pdf-open-link{ text-align:right; margin:0 0 16px; }
+.pdf-open-link a{ color:var(--red); font-size:12.5px; font-weight:600; text-decoration:none; }
+
+.photo-frame-wrap{
+  border:1.5px solid var(--line); border-radius:var(--radius); overflow:hidden; background:#111;
+  aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; margin-bottom:10px;
+}
+#photoVideo{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+.photo-preview{ width:100%; border-radius:var(--radius); border:1.5px solid var(--line); margin-bottom:14px; display:block; }
+#photoError{ margin-bottom:10px; }
+
 @media (max-width:560px){
   .quiz-card{ padding:26px 20px 24px; }
   .field-row{ flex-direction:column; gap:0; }
@@ -848,9 +861,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="q-step" id="step-contractPreview">
         <div class="q-eyebrow">Ficha de adesão CDL</div>
         <h2 class="q-title">Confira o contrato antes de assinar</h2>
-        <p class="q-sub">Revise os dados preenchidos automaticamente e os termos do instrumento de associação.</p>
+        <p class="q-sub">Este é o mesmo documento oficial da CDL Mossoró, já preenchido com os dados que você digitou.</p>
 
-        <div class="contract-box" id="contractBox"></div>
+        <div class="pdf-frame-wrap">
+          <iframe id="contractPdfFrame" class="contract-pdf-frame" title="Contrato de associação CDL"></iframe>
+        </div>
+        <p class="pdf-open-link"><a id="contractPdfOpenLink" href="#" target="_blank" rel="noopener">Abrir o PDF em uma nova aba ↗</a></p>
 
         <div class="agree-row">
           <input type="checkbox" id="agreeCheck" onchange="document.getElementById('goSignBtn').disabled = !this.checked">
@@ -890,7 +906,37 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <img id="signedImg" alt="Assinatura">
           <p class="ts" id="signedTs"></p>
           <div class="q-actions">
-            <button class="btn btn-primary btn-block" onclick="next()">Continuar simulação</button>
+            <a id="downloadSignedPdfBtn" class="btn btn-ghost btn-block" href="#" download>Baixar contrato assinado (PDF)</a>
+          </div>
+          <div class="q-actions">
+            <button class="btn btn-primary btn-block" onclick="next()">Continuar para verificação de identidade</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOTO DE VERIFICAÇÃO DE IDENTIDADE -->
+      <div class="q-step" id="step-identityPhoto">
+        <div class="q-eyebrow">Verificação de identidade</div>
+        <h2 class="q-title">Tire uma foto do seu rosto</h2>
+        <p class="q-sub">Isso ajuda a confirmar sua identidade no momento da assinatura. Essa foto fica só no nosso controle interno — <b>não aparece no contrato que você baixa</b>.</p>
+
+        <div id="photoCaptureArea">
+          <div class="photo-frame-wrap">
+            <video id="photoVideo" autoplay playsinline muted></video>
+          </div>
+          <canvas id="photoCanvas" style="display:none"></canvas>
+          <div class="field-error" id="photoError">Não conseguimos acessar sua câmera. Verifique a permissão do navegador e tente novamente.</div>
+          <div class="q-actions">
+            <button class="btn btn-ghost" onclick="prev()">Voltar</button>
+            <button class="btn btn-primary" id="takePhotoBtn" onclick="capturePhoto()">Tirar foto</button>
+          </div>
+        </div>
+
+        <div id="photoConfirmed" style="display:none">
+          <img id="capturedPhotoImg" class="photo-preview" alt="Foto capturada">
+          <div class="q-actions">
+            <button class="btn btn-ghost" onclick="retakePhoto()">Tirar outra</button>
+            <button class="btn btn-primary" onclick="confirmPhotoStep()">Continuar</button>
           </div>
         </div>
       </div>
@@ -1089,7 +1135,7 @@ function showStepId(id){
   const nice = {
     intro:"Início", cnpj:"CNPJ", celular:"Celular", statusOk:"Verificação", statusWarn:"Verificação",
     contractForm:"Ficha de adesão", contractPreview:"Contrato", signature:"Assinatura",
-    contatoAssociado:"Contato", vidas:"Vidas no plano", fatura:"Fatura atual", resultado:"Resultado",
+    contatoAssociado:"Contato", identityPhoto:"Verificação de identidade", vidas:"Vidas no plano", fatura:"Fatura atual", resultado:"Resultado",
     cadastroVidas:"Cadastro das vidas", sucesso:"Concluído"
   };
   document.getElementById("stepsLabel").textContent = nice[id] || "";
@@ -1157,7 +1203,7 @@ async function validateCelularStep(evt){
     document.getElementById("empresaEncontradaNome").textContent = empresaEncontrada;
     flow = ["intro","cnpj","celular","statusOk","contatoAssociado","vidas","fatura","resultado","cadastroVidas","sucesso"];
   } else {
-    flow = ["intro","cnpj","celular","statusWarn","contractForm","contractPreview","signature","vidas","fatura","resultado","cadastroVidas","sucesso"];
+    flow = ["intro","cnpj","celular","statusWarn","contractForm","contractPreview","signature","identityPhoto","vidas","fatura","resultado","cadastroVidas","sucesso"];
   }
   idx = 3;
   showStepId(flow[idx]);
@@ -1170,7 +1216,12 @@ function validateContatoAssociado(){
   next();
 }
 
-/* ===== FICHA DE ADESÃO / CONTRATO ===== */
+/* ===== FICHA DE ADESÃO / CONTRATO (PDF real, preenchido automaticamente) ===== */
+let contractPdfBlobUrl = null;
+let signedContractBlobUrl = null;
+let signedAtGlobal = null;
+let identityPhotoDataUrl = null;
+
 function validateContractForm(){
   const required = ["razaoSocial","ramoAtividade","diretorResponsavel","cpfDiretor","enderecoRua","bairro","cidade","cep","emailDiretor"];
   let ok = true;
@@ -1180,89 +1231,197 @@ function validateContractForm(){
     else { el.style.borderColor = ""; }
   });
   if(!ok){ alert("Preencha os campos obrigatórios do contrato antes de continuar."); return; }
-  document.getElementById("contractBox").innerHTML = buildContractHTML();
+
+  const { blobUrl } = buildContractPDF();
+  contractPdfBlobUrl = blobUrl;
+  document.getElementById("contractPdfFrame").src = blobUrl;
+  document.getElementById("contractPdfOpenLink").href = blobUrl;
   next();
 }
 
-function buildContractHTML(){
-  const v = id => { const el = document.getElementById(id); const val = el ? el.value.trim() : ""; return val || "<em>não informado</em>"; };
-  const cnpj = document.getElementById("cnpj").value || "<em>não informado</em>";
-  const celular = document.getElementById("celular").value || "<em>não informado</em>";
+// Conteúdo das cláusulas do contrato — mesmo texto do instrumento oficial da CDL Mossoró
+const CONTRACT_CLAUSES = [
+  { h: "CLÁUSULA 1ª – DO OBJETO", p: [
+    "1.1 O objeto do presente contrato tem por objetivo regular a Associação entre a CDL MOSSORÓ e a ASSOCIADA, nos termos do Estatuto, Regimentos, Políticas Internas e Conduta, subordinando-se a elas e às cláusulas abaixo.",
+    "a) Este Instrumento também trata a respeito do DISCIPLINAMENTO DE USO DE BANCO DE DADOS ao qual se compromete a CDL MOSSORÓ em colocar à disposição ASSOCIADA todas as informações localizadas no Base de Dados formado pelo compartilhamento de informações em nível nacional e que compõem o SPC Brasil.",
+    "Parágrafo único. O banco de dados do SPC Brasil contempla a visualização de informações da base da SERASA, em consultas 02 (dois) bureau, nos termos do contrato/aditivo firmado entre ambos, enquanto perdurar aquela avença.",
+    "1.2 A CDL Mossoró é uma entidade de classe, pautada pelo associativismo, instrumento importante para que os Empresários da Capital potiguar tenham maior expressão econômica, social e política."
+  ]},
+  { h: "CLÁUSULA 2ª – DIREITOS DO TITULAR DOS DADOS", p: [
+    "2.1 A ASSOCIADA autoriza o tratamento de dados pessoais e de sua empresa, nos limites das finalidades institucionais da CDL MOSSORÓ, observando o norteamento jurídico da Lei nº 13.709/2018 (LGPD), incluindo envio de comunicações internas, execução de contrato, exercício regular de direitos e proteção do crédito.",
+    "2.2 Os dados coletados por esta ENTIDADE NÃO serão compartilhados com terceiros, conforme Políticas Internas, salvo nos casos em que a ASSOCIADA autorize.",
+    "2.3 A ASSOCIADA tem o direito de saber quais Dados Pessoais mantemos, podendo acessar, corrigir, solicitar exclusão ou restrição do tratamento, conforme a legislação aplicável.",
+    "2.6 Dúvidas sobre esses direitos podem ser enviadas à OUVIDORIA: gerencia@cdlmossoro.com.br / (84) 3422.0300."
+  ]},
+  { h: "CLÁUSULA 3ª – DA ADESÃO, FORMAS DE PAGAMENTOS E VENCIMENTOS", p: [
+    "3.1 A ASSOCIADA pagará à CDL MOSSORÓ uma taxa de adesão, no ato da assinatura deste termo. O acesso aos Benefícios, Sistemas da Entidade e Sistema do SPC Brasil é liberado após o pagamento.",
+    "3.2 A data de vencimento ocorrerá sempre no dia 12 de cada mês, podendo ser alterada conforme necessidade da ENTIDADE.",
+    "3.3 A ASSOCIADA efetuará o pagamento da fatura enviada pela CDL MOSSORÓ, sujeitando-se a multa de 2% e juros de 3% a.m. em caso de atraso.",
+    "c) O atraso a partir de 1 fatura mensal permite à CDL MOSSORÓ suspender a disponibilidade dos serviços. O atraso de 3 mensalidades resulta na inclusão da ASSOCIADA perante os órgãos de proteção ao crédito.",
+    "3.4 Em dia com suas obrigações, a ASSOCIADA tem direito aos benefícios, convênios e descontos exclusivos da CDL MOSSORÓ, incluindo planos de saúde, entre outros serviços."
+  ]},
+  { h: "CLÁUSULA 4ª – DO REAJUSTE, VIGÊNCIA E DA RESCISÃO", p: [
+    "4.1 Os valores serão reajustados anualmente, no mês de Janeiro, conforme regulamentos do SPC Brasil.",
+    "4.2 O cancelamento poderá ser realizado após o prazo mínimo de vigência, mediante comunicação por escrito.",
+    "4.3 A rescisão antes do prazo mínimo de vigência acarreta o pagamento do valor correspondente aos meses restantes até o prazo mínimo.",
+    "4.5 A CDL MOSSORÓ poderá rescindir o presente Termo em caso de descumprimento de cláusulas ou conduta indigna da condição de associada."
+  ]},
+  { h: "CLÁUSULA 5ª – DAS RESPONSABILIDADES DA ASSOCIADA", p: [
+    "5.1 Constituem obrigações da ASSOCIADA, entre outras: efetuar o pontual pagamento; não repassar a terceiros as informações cadastrais transmitidas pela CDL MOSSORÓ; responsabilizar-se pelas informações cadastradas no SPC Brasil; registrar apenas débitos legalmente reconhecidos; comunicar fiador/avalista sobre inadimplência antes da abertura de cadastro; e manter a CDL informada sobre operadores desligados ou novos."
+  ]},
+  { h: "CLÁUSULA 6ª – DAS CONDIÇÕES GERAIS", p: [
+    "6.1 A ASSOCIADA e a CDL MOSSORÓ declaram estar cientes de seus respectivos direitos e deveres, incluindo eventuais condições para uso de benefícios e aceite de modificações nos regulamentos dos serviços.",
+    "6.7 O uso das marcas do Serviço de Proteção ao Crédito é exclusivo da CDL MOSSORÓ, sendo proibida sua reprodução pela ASSOCIADA.",
+    "6.8 As informações, consultas e serviços prestados são CONFIDENCIAIS e de uso exclusivo da ASSOCIADA.",
+    "6.9 Em caso de alteração de CNPJ, a ASSOCIADA deverá celebrar um novo contrato.",
+    "6.10 A ASSOCIADA declara que neste ato recebe: Anexo I – Tabela de Preços; Anexo II – Termo de Tratamento de Dados Pessoais; via deste Instrumento de Associação."
+  ]},
+  { h: "CLÁUSULA 7ª – DO FORO", p: [
+    "7.1 Para dirimir qualquer dúvida decorrente deste Termo, as partes elegem o foro da cidade de Mossoró, como único e competente, renunciando a qualquer outro.",
+    "7.2 Por estarem assim justas e acordadas, as partes assinam este instrumento eletronicamente, para um só efeito de Direito."
+  ]}
+];
+
+// Gera o PDF do contrato (igual ao instrumento oficial da CDL), preenchido com os dados digitados.
+// Se signatureDataUrl for informado, desenha a assinatura no campo da ASSOCIADA.
+function buildContractPDF(signatureDataUrl, signedAt, photoDataUrl){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const marginX = 15, maxW = 180;
+  let y = 18;
+
+  function ensureSpace(need){
+    if(y + need > 280){ doc.addPage(); y = 18; }
+  }
+  function writeParagraph(text, opts={}){
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size || 9.5);
+    const lines = doc.splitTextToSize(text, maxW);
+    lines.forEach(line=>{
+      ensureSpace(5);
+      doc.text(line, marginX, y);
+      y += 5;
+    });
+    y += opts.gapAfter !== undefined ? opts.gapAfter : 2;
+  }
+  function writeHeading(text){
+    ensureSpace(10);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(0,4,45);
+    doc.text(text, marginX, y);
+    y += 6;
+    doc.setTextColor(20,20,20);
+  }
+
+  const v = id => { const el = document.getElementById(id); const val = el ? el.value.trim() : ""; return val || "não informado"; };
+  const cnpj = document.getElementById("cnpj").value || "não informado";
+  const celular = document.getElementById("celular").value || "não informado";
   const hoje = new Date().toLocaleDateString("pt-BR");
 
-  return `
-    <div class="contract-logo-row">
-      <img src="${CDL_LOGO_DATAURI}" alt="CDL Mossoró">
-      <div>
-        <div class="contract-doc-title">ASSOCIADO CDL ( X ) USUÁRIO SPC ( X )</div>
-        <div style="font-size:11px;color:var(--gray)">Instrumento de Associação entre a Câmara de Dirigentes Lojistas de Mossoró e a Associada</div>
-      </div>
-    </div>
+  // Cabeçalho com a logo da CDL
+  try{ doc.addImage(CDL_LOGO_DATAURI, "PNG", marginX, 10, 32, 15); }catch(e){}
+  doc.setFont("helvetica","bold"); doc.setFontSize(12); doc.setTextColor(0,4,45);
+  doc.text("ASSOCIADO CDL ( X )   USUÁRIO SPC ( X )", marginX + 38, 17);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(90,90,100);
+  const subLines = doc.splitTextToSize("Instrumento de Associação entre a Câmara de Dirigentes Lojistas de Mossoró e a Associada, na forma descrita abaixo:", 140);
+  doc.text(subLines, marginX + 38, 22);
+  doc.setTextColor(20,20,20);
+  y = 34;
 
-    <p>Pelo presente Instrumento de Associação, doravante designada CDL MOSSORÓ, inscrita no CNPJ/MF sob o nº 08.302.325/0001-30, com sede à Rua Alfredo Fernandes, nº 292, Centro, Mossoró/RN, CEP 59.600-180, neste ato representada pelo seu Presidente, na forma do seu Estatuto Social, e de outro lado a empresa:</p>
+  writeParagraph("Pelo presente Instrumento de Associação, doravante designada CDL MOSSORÓ, inscrita no CNPJ/MF sob o nº 08.302.325/0001-30, com sede à Rua Alfredo Fernandes, nº 292, Centro, Mossoró/RN, CEP 59.600-180, neste ato representada pelo seu Presidente, na forma do seu Estatuto Social, e de outro lado a empresa:", { gapAfter: 3 });
 
-    <table class="contract-table">
-      <tr><td><b>Razão Social / Associada:</b> ${v('razaoSocial')}</td></tr>
-      <tr><td><b>Nome Fantasia:</b> ${v('nomeFantasia')}</td></tr>
-      <tr><td><b>CNPJ:</b> ${cnpj} &nbsp; <b>Inscrição Estadual:</b> ${v('inscricaoEstadual')} &nbsp; <b>Ramo de Atividade:</b> ${v('ramoAtividade')}</td></tr>
-      <tr><td><b>Diretor/Responsável:</b> ${v('diretorResponsavel')} &nbsp; <b>Data de Aniversário:</b> ${v('dataAniversario')}</td></tr>
-      <tr><td><b>CPF:</b> ${v('cpfDiretor')}</td></tr>
-      <tr><td><b>Endereço:</b> ${v('enderecoRua')}</td></tr>
-      <tr><td><b>Bairro:</b> ${v('bairro')} &nbsp; <b>Cidade:</b> ${v('cidade')} &nbsp; <b>CEP:</b> ${v('cep')}</td></tr>
-      <tr><td><b>Telefone Fixo:</b> ${v('telFixo')} &nbsp; <b>Celular:</b> ${celular} &nbsp; <b>Whatsapp:</b> ${v('whatsapp')}</td></tr>
-      <tr><td><b>E-mail (Diretor):</b> ${v('emailDiretor')} &nbsp; <b>E-mail (Financeiro):</b> ${v('emailFinanceiro')}</td></tr>
-      <tr><td><b>Nome do Contador:</b> ${v('nomeContador')} &nbsp; <b>Telefone contador:</b> ${v('telContador')}</td></tr>
-      <tr><td><b>Valor do pacote contratado:</b> a definir pela CDL Mossoró (taxa de adesão)</td></tr>
-    </table>
+  // Tabela de dados da empresa
+  const rows = [
+    ["Razão Social / Associada", v('razaoSocial')],
+    ["Nome Fantasia", v('nomeFantasia')],
+    ["CNPJ", cnpj],
+    ["Inscrição Estadual", v('inscricaoEstadual')],
+    ["Ramo de Atividade", v('ramoAtividade')],
+    ["Diretor/Responsável", v('diretorResponsavel')],
+    ["Data de Aniversário", v('dataAniversario')],
+    ["CPF", v('cpfDiretor')],
+    ["Endereço", v('enderecoRua')],
+    ["Bairro", v('bairro')],
+    ["Cidade", v('cidade')],
+    ["CEP", v('cep')],
+    ["Telefone Fixo", v('telFixo')],
+    ["Celular", celular],
+    ["Whatsapp", v('whatsapp')],
+    ["E-mail (Diretor)", v('emailDiretor')],
+    ["E-mail (Financeiro)", v('emailFinanceiro')],
+    ["Nome do Contador", v('nomeContador')],
+    ["Telefone Contador", v('telContador')],
+    ["Valor do pacote contratado", "a definir pela CDL Mossoró (taxa de adesão)"]
+  ];
+  doc.setFontSize(9);
+  rows.forEach(([label, val], i)=>{
+    ensureSpace(6.5);
+    if(i % 2 === 0){ doc.setFillColor(246,246,248); doc.rect(marginX, y-4.3, maxW, 6.2, "F"); }
+    doc.setFont("helvetica","bold"); doc.setTextColor(0,4,45);
+    doc.text(label + ":", marginX + 2, y);
+    doc.setFont("helvetica","normal"); doc.setTextColor(30,30,30);
+    const valLines = doc.splitTextToSize(String(val), maxW - 62);
+    doc.text(valLines, marginX + 62, y);
+    y += Math.max(6.2, valLines.length * 4.5);
+  });
+  y += 4;
 
-    <p>doravante denominada ASSOCIADA, neste ato representada na forma da documentação legal da Empresa e seu representante, ajustam a celebração do presente negócio jurídico, a se reger pelas seguintes cláusulas e condições:</p>
+  writeParagraph("doravante denominada ASSOCIADA, neste ato representada na forma da documentação legal da Empresa e seu representante, ajustam a celebração do presente negócio jurídico, a se reger pelas seguintes cláusulas e condições:", { gapAfter: 3 });
 
-    <h4>CLÁUSULA 1ª – DO OBJETO</h4>
-    <p>1.1 O objeto do presente contrato tem por objetivo regular a Associação entre a CDL MOSSORÓ e a ASSOCIADA, nos termos do Estatuto, Regimentos, Políticas Internas e Conduta, subordinando-se a elas e às cláusulas abaixo.</p>
-    <p>a) Este Instrumento também trata a respeito do DISCIPLINAMENTO DE USO DE BANCO DE DADOS ao qual se compromete a CDL MOSSORÓ em colocar à disposição ASSOCIADA todas as informações localizadas no Base de Dados formado pelo compartilhamento de informações em nível nacional e que compõem o SPC Brasil.</p>
-    <p><b>Parágrafo único.</b> O banco de dados do SPC Brasil contempla a visualização de informações da base da SERASA, em consultas 02 (dois) bureau, nos termos do contrato/aditivo firmado entre ambos, enquanto perdurar aquela avença.</p>
-    <p>1.2 A CDL Mossoró é uma entidade de classe, pautada pelo associativismo, instrumento importante para que os Empresários da Capital potiguar tenham maior expressão econômica, social e política.</p>
+  CONTRACT_CLAUSES.forEach(clause=>{
+    writeHeading(clause.h);
+    clause.p.forEach(par => writeParagraph(par));
+  });
 
-    <h4>CLÁUSULA 2ª – DIREITOS DO TITULAR DOS DADOS</h4>
-    <p>2.1 A ASSOCIADA autoriza o tratamento de dados pessoais e de sua empresa, nos limites das finalidades institucionais da CDL MOSSORÓ, observando o norteamento jurídico da Lei nº 13.709/2018 (LGPD), incluindo envio de comunicações internas, execução de contrato, exercício regular de direitos e proteção do crédito.</p>
-    <p>2.2 Os dados coletados por esta ENTIDADE NÃO serão compartilhados com terceiros, conforme Políticas Internas, salvo nos casos em que a ASSOCIADA autorize.</p>
-    <p>2.3 A ASSOCIADA tem o direito de saber quais Dados Pessoais mantemos, podendo acessar, corrigir, solicitar exclusão ou restrição do tratamento, conforme a legislação aplicável.</p>
-    <p>2.6 Dúvidas sobre esses direitos podem ser enviadas à OUVIDORIA: gerencia@cdlmossoro.com.br / (84) 3422.0300.</p>
+  ensureSpace(14);
+  y += 2;
+  doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+  doc.text(`Mossoró/RN, ${hoje}.`, marginX, y);
+  y += 14;
 
-    <h4>CLÁUSULA 3ª – DA ADESÃO, FORMAS DE PAGAMENTOS E VENCIMENTOS</h4>
-    <p>3.1 A ASSOCIADA pagará à CDL MOSSORÓ uma taxa de adesão, no ato da assinatura deste termo. O acesso aos Benefícios, Sistemas da Entidade e Sistema do SPC Brasil é liberado após o pagamento.</p>
-    <p>3.2 A data de vencimento ocorrerá sempre no dia 12 de cada mês, podendo ser alterada conforme necessidade da ENTIDADE.</p>
-    <p>3.3 A ASSOCIADA efetuará o pagamento da fatura enviada pela CDL MOSSORÓ, sujeitando-se a multa de 2% e juros de 3% a.m. em caso de atraso.</p>
-    <p>c) O atraso a partir de 1 fatura mensal permite à CDL MOSSORÓ suspender a disponibilidade dos serviços. O atraso de 3 mensalidades resulta na inclusão da ASSOCIADA perante os órgãos de proteção ao crédito.</p>
-    <p>3.4 Em dia com suas obrigações, a ASSOCIADA tem direito aos benefícios, convênios e descontos exclusivos da CDL MOSSORÓ, incluindo planos de saúde, entre outros serviços.</p>
+  // Bloco de assinaturas
+  ensureSpace(45);
+  const colW = 80;
+  const col1X = marginX, col2X = marginX + 95;
 
-    <h4>CLÁUSULA 4ª – DO REAJUSTE, VIGÊNCIA E DA RESCISÃO</h4>
-    <p>4.1 Os valores serão reajustados anualmente, no mês de Janeiro, conforme regulamentos do SPC Brasil.</p>
-    <p>4.2 O cancelamento poderá ser realizado após o prazo mínimo de vigência, mediante comunicação por escrito.</p>
-    <p>4.3 A rescisão antes do prazo mínimo de vigência acarreta o pagamento do valor correspondente aos meses restantes até o prazo mínimo.</p>
-    <p>4.5 A CDL MOSSORÓ poderá rescindir o presente Termo em caso de descumprimento de cláusulas ou conduta indigna da condição de associada.</p>
+  if(signatureDataUrl){
+    try{ doc.addImage(signatureDataUrl, "PNG", col1X + 5, y - 14, 60, 20); }catch(e){}
+  }
+  doc.setDrawColor(60,60,60);
+  doc.line(col1X, y + 8, col1X + colW, y + 8);
+  doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,4,45);
+  doc.text(v('diretorResponsavel'), col1X, y + 13);
+  doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(90,90,100);
+  doc.text("ASSOCIADA" + (signatureDataUrl ? " — assinado eletronicamente" : ""), col1X, y + 17);
+  if(signatureDataUrl && signedAt){
+    doc.text(`em ${signedAt}`, col1X, y + 21);
+  }
 
-    <h4>CLÁUSULA 5ª – DAS RESPONSABILIDADES DA ASSOCIADA</h4>
-    <p>5.1 Constituem obrigações da ASSOCIADA, entre outras: efetuar o pontual pagamento; não repassar a terceiros as informações cadastrais transmitidas pela CDL MOSSORÓ; responsabilizar-se pelas informações cadastradas no SPC Brasil; registrar apenas débitos legalmente reconhecidos; comunicar fiador/avalista sobre inadimplência antes da abertura de cadastro; e manter a CDL informada sobre operadores desligados ou novos.</p>
+  doc.line(col2X, y + 8, col2X + colW, y + 8);
+  doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(0,4,45);
+  doc.text("CDL Mossoró", col2X, y + 13);
+  doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(90,90,100);
+  doc.text("CONTRATADA", col2X, y + 17);
 
-    <h4>CLÁUSULA 6ª – DAS CONDIÇÕES GERAIS</h4>
-    <p>6.1 A ASSOCIADA e a CDL MOSSORÓ declaram estar cientes de seus respectivos direitos e deveres, incluindo eventuais condições para uso de benefícios e aceite de modificações nos regulamentos dos serviços.</p>
-    <p>6.7 O uso das marcas do Serviço de Proteção ao Crédito é exclusivo da CDL MOSSORÓ, sendo proibida sua reprodução pela ASSOCIADA.</p>
-    <p>6.8 As informações, consultas e serviços prestados são CONFIDENCIAIS e de uso exclusivo da ASSOCIADA.</p>
-    <p>6.9 Em caso de alteração de CNPJ, a ASSOCIADA deverá celebrar um novo contrato.</p>
-    <p>6.10 A ASSOCIADA declara que neste ato recebe: Anexo I – Tabela de Preços; Anexo II – Termo de Tratamento de Dados Pessoais; via deste Instrumento de Associação.</p>
+  // Bloco de verificação de identidade — só entra na versão interna (nunca no PDF que o cliente baixa)
+  if(photoDataUrl){
+    y += 30;
+    ensureSpace(70);
+    doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(0,4,45);
+    doc.text("Verificação de identidade (documento interno — não enviado ao associado)", marginX, y);
+    y += 6;
+    try{ doc.addImage(photoDataUrl, "JPEG", marginX, y, 55, 41); }catch(e){}
+    doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(90,90,100);
+    const photoNote = doc.splitTextToSize("Foto capturada no momento da assinatura eletrônica, para conferência interna da CDL Mossoró. Este documento não é entregue ao associado.", 110);
+    doc.text(photoNote, marginX + 62, y + 6);
+    y += 45;
+  }
 
-    <h4>CLÁUSULA 7ª – DO FORO</h4>
-    <p>7.1 Para dirimir qualquer dúvida decorrente deste Termo, as partes elegem o foro da cidade de Mossoró, como único e competente, renunciando a qualquer outro.</p>
-    <p>7.2 Por estarem assim justas e acordadas, as partes assinam este instrumento eletronicamente, para um só efeito de Direito.</p>
-
-    <p style="margin-top:14px"><b>Mossoró/RN, ${hoje}.</b></p>
-
-    <div class="sign-block">
-      <div><b>CONTATO CDL MOSSORÓ</b><br>Telefone/WhatsApp: (84) 3422.0300<br>www.cdlmossoro.com.br</div>
-      <div><b>CONSULTOR:</b> Elder Delfino<br>WhatsApp: (84) 98839.3433</div>
-    </div>
-  `;
+  const empresaSlug = (v('razaoSocial') || "contrato").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  const filename = (photoDataUrl ? "interno-verificacao-" : (signatureDataUrl ? "contrato-assinado-" : "contrato-")) + empresaSlug + ".pdf";
+  const blobUrl = doc.output("bloburl");
+  return { doc, blobUrl, filename };
 }
 
 /* ===== ASSINATURA DIGITAL (canvas) ===== */
@@ -1331,10 +1490,78 @@ function confirmSignature(){
   document.getElementById("signConfirmed").style.display = "block";
   document.getElementById("signedImg").src = signatureDataUrl;
   const now = new Date();
+  const signedAtStr = now.toLocaleDateString("pt-BR") + " às " + now.toLocaleTimeString("pt-BR").slice(0,5);
+  signedAtGlobal = signedAtStr;
   document.getElementById("signedTs").textContent =
-    "Assinado eletronicamente em " + now.toLocaleDateString("pt-BR") + " às " + now.toLocaleTimeString("pt-BR").slice(0,5) +
+    "Assinado eletronicamente em " + signedAtStr +
     " · " + (document.getElementById("diretorResponsavel").value || "");
+
+  // Regera o PDF do contrato, agora com a assinatura desenhada, e libera o download
+  // IMPORTANTE: nunca passar a foto de verificação aqui — este é o arquivo que o cliente baixa.
+  const { blobUrl, filename } = buildContractPDF(signatureDataUrl, signedAtStr);
+  signedContractBlobUrl = blobUrl;
+  const dlBtn = document.getElementById("downloadSignedPdfBtn");
+  dlBtn.href = blobUrl;
+  dlBtn.setAttribute("download", filename);
 }
+
+/* ===== FOTO DE VERIFICAÇÃO DE IDENTIDADE (câmera) ===== */
+let cameraStream = null;
+
+async function startCamera(){
+  document.getElementById("photoError").style.display = "none";
+  try{
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+    document.getElementById("photoVideo").srcObject = cameraStream;
+  }catch(e){
+    console.warn("Não foi possível acessar a câmera.", e);
+    document.getElementById("photoError").style.display = "block";
+  }
+}
+function stopCamera(){
+  if(cameraStream){
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+function capturePhoto(){
+  const video = document.getElementById("photoVideo");
+  if(!video.videoWidth){ return; } // câmera ainda não carregou um frame
+  const canvasP = document.getElementById("photoCanvas");
+  canvasP.width = video.videoWidth;
+  canvasP.height = video.videoHeight;
+  const ctxP = canvasP.getContext("2d");
+  // espelha horizontalmente para bater com o preview (efeito espelho)
+  ctxP.translate(canvasP.width, 0);
+  ctxP.scale(-1, 1);
+  ctxP.drawImage(video, 0, 0, canvasP.width, canvasP.height);
+  identityPhotoDataUrl = canvasP.toDataURL("image/jpeg", 0.85);
+  stopCamera();
+  document.getElementById("photoCaptureArea").style.display = "none";
+  document.getElementById("photoConfirmed").style.display = "block";
+  document.getElementById("capturedPhotoImg").src = identityPhotoDataUrl;
+}
+function retakePhoto(){
+  identityPhotoDataUrl = null;
+  document.getElementById("photoConfirmed").style.display = "none";
+  document.getElementById("photoCaptureArea").style.display = "block";
+  startCamera();
+}
+function confirmPhotoStep(){
+  if(!identityPhotoDataUrl){ alert("Tire uma foto antes de continuar."); return; }
+  next();
+}
+
+// liga a câmera assim que a etapa de foto for exibida, desliga quando sair dela
+const photoStepObserver = new MutationObserver(()=>{
+  const step = document.getElementById("step-identityPhoto");
+  if(step.classList.contains("active")){
+    if(!cameraStream && !identityPhotoDataUrl){ startCamera(); }
+  } else {
+    stopCamera();
+  }
+});
+photoStepObserver.observe(document.getElementById("step-identityPhoto"), {attributes:true, attributeFilter:["class"]});
 
 // inicializa o canvas assim que a etapa de assinatura for exibida pela 1ª vez
 let canvasReady = false;
@@ -1624,6 +1851,25 @@ async function submitVidasCadastro(evt){
   const administradoraAtual = document.getElementById("administradora")?.value || null;
   const valorAtual = document.getElementById("valorAtual")?.value || null;
 
+  const btn = evt ? evt.target : null;
+  if(btn){ btn.disabled = true; btn.textContent = "Enviando..."; }
+
+  // Gera o PDF INTERNO (contrato + assinatura + foto de verificação) e envia só para o
+  // Storage privado do Supabase — esse arquivo nunca é mostrado nem baixado pelo cliente.
+  let internalPdfPath = null;
+  if(!isAssociado && signatureDataUrl && identityPhotoDataUrl){
+    try{
+      const { doc: internalDoc, filename: internalFilename } = buildContractPDF(signatureDataUrl, signedAtGlobal, identityPhotoDataUrl);
+      const pdfBlob = internalDoc.output("blob");
+      const path = `${Date.now()}-${internalFilename}`;
+      const { error: upErr } = await supabaseClient.storage.from("internal-docs").upload(path, pdfBlob, { contentType: "application/pdf" });
+      if(!upErr) internalPdfPath = path;
+      else console.warn("Falha ao enviar PDF interno (contrato + foto) ao Supabase Storage:", upErr);
+    }catch(e){
+      console.warn("Erro ao gerar/enviar o PDF interno de verificação:", e);
+    }
+  }
+
   const payload = {
     cnpj: document.getElementById("cnpj").value,
     celular: document.getElementById("celular").value,
@@ -1634,15 +1880,13 @@ async function submitVidasCadastro(evt){
     email: contato.email,
     contrato_assinado: !!signatureDataUrl,
     assinatura_base64: signatureDataUrl,
+    internal_pdf_path: internalPdfPath, // contrato + foto de verificação — só acessível pelo painel do Supabase
     plano_escolhido: chosenPlanKey ? PLAN_VALUES[chosenPlanKey].nome : null,
     administradora_atual: administradoraAtual,
     valor_atual: valorAtual ? Number(valorAtual) : null,
     vidas
   };
   console.log("Lead + adesão + cadastro de vidas:", payload);
-
-  const btn = evt ? evt.target : null;
-  if(btn){ btn.disabled = true; btn.textContent = "Enviando..."; }
 
   let enviadoComSucesso = false;
   try {
