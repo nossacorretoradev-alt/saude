@@ -1913,11 +1913,17 @@ uploadZone.addEventListener("drop", e=>{
   e.preventDefault(); uploadZone.classList.remove("drag");
   if(e.dataTransfer.files.length){ faturaInput.files = e.dataTransfer.files; handleFile(); }
 });
+let faturaFileDataUrl = null;
+let faturaFileName = null;
 function handleFile(){
   const f = faturaInput.files[0];
   if(!f) return;
   document.getElementById("fileName").textContent = f.name;
   document.getElementById("manualFields").style.display = "block";
+  faturaFileName = f.name;
+  const reader = new FileReader();
+  reader.onload = () => { faturaFileDataUrl = reader.result; };
+  reader.readAsDataURL(f);
 }
 function setFaturaMode(mode){
   document.getElementById("optBtnUpload").classList.toggle("active", mode === "upload");
@@ -2207,6 +2213,22 @@ async function submitVidasCadastro(evt){
     }
   }
 
+  // Envia a fatura atual (se a pessoa fez upload) para o mesmo Storage privado.
+  let faturaPath = null;
+  if(faturaFileDataUrl && faturaFileName){
+    try{
+      const res = await fetch(faturaFileDataUrl);
+      const faturaBlob = await res.blob();
+      const safeName = faturaFileName.replace(/[^a-zA-Z0-9.\-_]+/g, "_");
+      const path = `fatura-${Date.now()}-${safeName}`;
+      const { error: upErr } = await supabaseClient.storage.from("internal-docs").upload(path, faturaBlob, { contentType: faturaBlob.type || "application/octet-stream" });
+      if(!upErr) faturaPath = path;
+      else console.warn("Falha ao enviar a fatura ao Supabase Storage:", upErr);
+    }catch(e){
+      console.warn("Erro ao enviar a fatura:", e);
+    }
+  }
+
   const payload = {
     cnpj: document.getElementById("cnpj").value,
     celular: document.getElementById("celular").value,
@@ -2217,6 +2239,7 @@ async function submitVidasCadastro(evt){
     email: contato.email,
     contrato_assinado: !!signatureDataUrl,
     assinatura_base64: signatureDataUrl,
+    fatura_path: faturaPath,
     internal_pdf_path: internalPdfPath, // contrato + foto de verificação — só acessível pelo painel do Supabase
     plano_escolhido: chosenPlanKey ? PLAN_VALUES[chosenPlanKey].nome : null,
     administradora_atual: administradoraAtual,
