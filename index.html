@@ -325,9 +325,19 @@ button{ font-family:inherit; cursor:pointer; }
 .footer-col h5{ font-family:var(--font-display); color:#fff; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
 .footer-col p, .footer-col a{ font-size:13px; color:#AEB3D6; line-height:1.8; text-decoration:none; display:block; }
 .footer-col a:hover{ color:#fff; }
+.footer-privacy{
+  display:flex; align-items:flex-start; gap:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px; padding:16px 18px; margin-bottom:22px;
+}
+.footer-privacy svg{ width:20px; height:20px; color:var(--green-bright); flex-shrink:0; margin-top:1px; }
+.footer-privacy p{ font-size:12px; line-height:1.6; color:#AEB3D6; margin:0; }
+.footer-privacy p b{ color:#fff; }
 .footer-bottom{ border-top:1px solid rgba(255,255,255,0.12); padding-top:18px; text-align:center; font-size:11.5px; color:#7A80AD; }
 @media (max-width:680px){
-  .footer-grid{ grid-template-columns:1fr; gap:22px; text-align:left; }
+  .footer-grid{ grid-template-columns:1fr; gap:26px; text-align:center; }
+  .footer-col{ display:flex; flex-direction:column; align-items:center; }
+  .footer-col img{ margin-left:auto; margin-right:auto; }
+  .footer-privacy{ flex-direction:column; align-items:center; text-align:center; }
 }
 
 @media (max-width:560px){
@@ -1119,6 +1129,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div class="field">
             <label for="valorAtual">Valor total mensal atual (R$)</label>
             <input type="number" id="valorAtual" placeholder="Ex: 1450" min="0">
+            <div class="field-error" id="valorAtualError">Esse valor parece baixo demais pra um plano de saúde — confira se digitou certo, ou deixe em branco.</div>
           </div>
         </div>
 
@@ -1177,7 +1188,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
 
     </div>
-    <p class="quiz-footnote">Seus dados são usados apenas para gerar sua cotação junto à CDL Mossoró e Unimed.</p>
+    <p class="quiz-footnote">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:3px;"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+      Seus dados são usados apenas para gerar sua cotação junto à CDL Mossoró e Unimed, sob responsabilidade da Nossa Corretora e em conformidade com a LGPD.
+    </p>
   </div>
 </section>
 
@@ -1268,6 +1282,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <h5>Parceria</h5>
         <p>Simulador desenvolvido em parceria entre a CDL Mossoró e a Unimed, para associados e empresas de Mossoró e região.</p>
       </div>
+    </div>
+    <div class="footer-privacy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+      <p><b>Seus dados estão protegidos.</b> Todas as informações preenchidas nesta simulação são de responsabilidade da Nossa Corretora de Seguros e tratadas em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018). Seus dados são usados exclusivamente para gerar sua cotação e dar andamento à adesão junto à CDL Mossoró e à Unimed — nunca compartilhados com terceiros sem sua autorização.</p>
     </div>
     <div class="footer-bottom">© <span id="footerYear"></span> Nossa Corretora de Seguros — Filiada Lojacorr. Todos os direitos reservados.</div>
   </div>
@@ -2015,7 +2033,22 @@ function renderResultsStep(){
   document.getElementById("chosenPlanBox").style.display = "none";
 }
 
-function goToResults(){ renderResultsStep(); next(); }
+function goToResults(){
+  const valorEl = document.getElementById("valorAtual");
+  const valor = Number(valorEl.value || 0);
+  // Ninguém paga menos de ~R$80/mês por um plano de saúde — se vier algo abaixo disso,
+  // é quase certo que foi digitado sem querer (ex: "3" em vez de "1300"). Barra e avisa.
+  if(valor > 0 && valor < 80){
+    valorEl.style.borderColor = "var(--warn)";
+    document.getElementById("valorAtualError").style.display = "block";
+    valorEl.focus();
+    return;
+  }
+  valorEl.style.borderColor = "";
+  document.getElementById("valorAtualError").style.display = "none";
+  renderResultsStep();
+  next();
+}
 
 let chosenPlanKey = null;
 
