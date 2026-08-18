@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete seus dados — CDL Mossoró × Unimed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#00042D; --navy-soft:#0B1140; --navy-tint:#EEEEF3;
+  --green:#159442; --green-bright:#3ECB74; --green-tint:#E8F7EE;
+  --warn:#B45309; --warn-tint:#FDF1E2; --cream:#F6F6F8; --line:#E2E2E8;
+  --ink:#14141C; --gray:#5B5B66; --gray-soft:#8B8B96;
+  --font-display:'Archivo',Arial,sans-serif; --font-body:'Inter',-apple-system,sans-serif;
+  --radius:16px; --radius-lg:24px;
+  --container:600px;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+body{ margin:0; font-family:var(--font-body); background:var(--cream); color:var(--ink); }
+h1,h2,h3{ font-family:var(--font-display); margin:0; }
+
+/* ===== HERO ===== */
+.hero{ background:var(--navy); padding:36px 20px 60px; text-align:center; position:relative; overflow:hidden; }
+.hero-spiral{ position:absolute; top:-30px; right:-50px; width:260px; height:260px; opacity:.18; pointer-events:none; }
+.hero-badge{
+  display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,0.08); color:#fff;
+  font-size:12px; font-weight:600; padding:7px 14px; border-radius:999px; margin-bottom:16px;
+  border:1px solid rgba(255,255,255,0.15); position:relative; z-index:1;
+}
+.hero h1{ color:#fff; font-size:22px; font-weight:800; position:relative; z-index:1; max-width:420px; margin:0 auto; line-height:1.3; }
+.hero p{ color:#C7C9DB; font-size:13.5px; margin:10px auto 0; max-width:360px; position:relative; z-index:1; line-height:1.5; }
+
+/* ===== CARD (flutua sobre o hero) ===== */
+.wrap{ max-width:var(--container); margin:-34px auto 40px; padding:0 16px; position:relative; z-index:2; }
+.card{
+  background:#fff; border-radius:var(--radius-lg); box-shadow:0 14px 34px -16px rgba(0,4,45,0.28);
+  padding:28px 24px 26px; position:relative; overflow:hidden;
+}
+.card::before{ content:""; position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,var(--navy),var(--green)); }
+
+/* progresso */
+.progress-row{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.progress-ring{ width:38px; height:38px; border-radius:50%; flex:0 0 auto; position:relative;
+  background:conic-gradient(var(--green) calc(var(--pct,0)*1%), var(--line) 0); transition:background .5s ease; }
+.progress-ring::after{ content:""; position:absolute; inset:4px; background:#fff; border-radius:50%; }
+.progress-ring span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:800; color:var(--navy); }
+.progress-label{ font-size:11.5px; font-weight:700; color:var(--gray-soft); text-transform:uppercase; letter-spacing:.03em; }
+
+.step-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.step-icon{ width:34px; height:34px; border-radius:10px; background:var(--navy-tint); color:var(--navy); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.step-icon svg{ width:18px; height:18px; }
+.step-icon.green{ background:var(--green-tint); color:var(--green); }
+.eyebrow{ font-size:11.5px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.04em; }
+h2.step-title{ font-size:19px; margin:2px 0 6px; color:var(--navy); }
+p.step-sub{ color:var(--gray); font-size:13px; margin:0 0 20px; line-height:1.55; }
+
+/* ===== CAMPOS ===== */
+.field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:480px){ .field-grid{ grid-template-columns:1fr; } }
+.fg{ margin-bottom:14px; }
+.fg label{ display:block; font-size:11.5px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.02em; margin-bottom:6px; }
+.fg input, .fg select{ width:100%; border:1.5px solid var(--line); border-radius:11px; padding:12px 14px; font-size:14.5px; font-family:inherit; background:var(--cream); color:var(--ink); }
+.fg input:focus, .fg select:focus{ outline:none; border-color:var(--navy); background:#fff; }
+.field-hint{ font-size:11.5px; margin-top:6px; color:var(--gray-soft); min-height:14px; }
+.field-hint.ok{ color:var(--green); font-weight:600; }
+
+/* ===== DECLARAÇÃO DE SAÚDE ===== */
+.ds-progress{ display:flex; align-items:center; justify-content:space-between; background:var(--cream); border-radius:11px; padding:10px 14px; margin-bottom:16px; font-size:12px; font-weight:700; color:var(--navy); }
+.ds-progress .bar{ flex:1; height:6px; background:var(--line); border-radius:99px; margin:0 12px; overflow:hidden; }
+.ds-progress .bar i{ display:block; height:100%; background:var(--green); border-radius:99px; transition:width .3s; }
+.ds-q-card{ border:1.5px solid var(--line); border-radius:13px; padding:14px 15px; margin-bottom:10px; transition:.15s; }
+.ds-q-card.answered-sim{ border-color:var(--warn); background:var(--warn-tint); }
+.ds-q-card.answered-nao{ border-color:var(--green); background:var(--green-tint); }
+.ds-q-num{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--navy-tint); color:var(--navy); font-size:10.5px; font-weight:800; flex-shrink:0; margin-right:8px; }
+.ds-q-text{ font-size:12.5px; color:var(--ink); line-height:1.5; display:inline; }
+.ds-toggle{ display:flex; gap:8px; margin-top:10px; }
+.ds-toggle button{ flex:1; padding:9px; border-radius:9px; border:1.5px solid var(--line); background:#fff; font-weight:700; font-size:12.5px; color:var(--gray); cursor:pointer; font-family:inherit; }
+.ds-toggle button.active-nao{ border-color:var(--green); background:var(--green); color:#fff; }
+.ds-toggle button.active-sim{ border-color:var(--warn); background:var(--warn); color:#fff; }
+.ds-detail{ margin-top:9px; display:none; }
+.section-title{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--green); margin:22px 0 12px; padding-top:6px; border-top:1px dashed var(--line); }
+.section-title:first-of-type{ border-top:none; margin-top:4px; }
+
+/* ===== BOTÕES ===== */
+.q-actions{ display:flex; gap:10px; margin-top:22px; }
+.btn{ font-family:var(--font-display); font-weight:800; font-size:14.5px; padding:14px 20px; border-radius:999px; border:none; cursor:pointer; }
+.btn-primary{ background:var(--navy); color:#fff; flex:1; }
+.btn-primary:hover{ background:#000220; }
+.btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
+.btn-ghost{ background:var(--cream); color:var(--gray); flex:0 0 auto; }
+.btn-block{ width:100%; }
+
+/* ===== TELAS ESPECIAIS ===== */
+.intro-icon{ width:52px; height:52px; border-radius:16px; background:var(--green-tint); color:var(--green); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.intro-icon svg{ width:26px; height:26px; }
+.checklist{ text-align:left; margin:18px 0; }
+.checklist li{ list-style:none; display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--gray); margin-bottom:10px; line-height:1.4; }
+.checklist svg{ width:16px; height:16px; color:var(--green); flex-shrink:0; margin-top:2px; }
+
+.success-icon{ width:60px; height:60px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 18px; }
+.loading, .error-box{ text-align:center; padding:50px 10px; }
+.error-box h2{ color:var(--warn); font-size:18px; margin-bottom:8px; }
+.error-box p{ color:var(--gray); font-size:13.5px; }
+.spinner{ width:30px; height:30px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--navy); margin:0 auto 14px; animation:spin .8s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.footnote{ text-align:center; font-size:11px; color:var(--gray-soft); margin-top:16px; line-height:1.5; }
+.footnote svg{ width:12px; height:12px; vertical-align:-1px; margin-right:3px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <svg class="hero-spiral" viewBox="0 0 200 200" fill="none">
+    <g stroke="#3A4380" stroke-width="3">
+      <path d="M100 100 Q 130.7 116.8 160.7 169.1"/><path d="M100 100 Q 118.2 129.9 118.0 190.2"/>
+      <path d="M100 100 Q 100 135.4 80.9 190.2"/><path d="M100 100 Q 82.9 129.9 39.3 169.1"/>
+      <path d="M100 100 Q 69.3 116.8 10.3 130.9"/><path d="M100 100 Q 64.6 100 0 100"/>
+    </g>
+  </svg>
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+    Link seguro e pessoal
+  </div>
+  <h1 id="heroTitle">Complete os dados da sua adesão</h1>
+  <p id="heroSub">CDL Mossoró × Unimed</p>
+</div>
+
+<div class="wrap" id="app">
+  <div class="card">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p style="color:var(--gray);font-size:13.5px;">Carregando seus dados...</p>
+    </div>
+  </div>
+</div>
+<div class="wrap" style="margin-top:0;" id="footnoteArea"></div>
+
+<script>
+const SUPABASE_URL = "https://ucqmgvmnqcbbboryuevn.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_8mxIm8xrMLcIICWXGxtFSA_sancrabI";
+const STORAGE_KEY = 'cdlunimed_portal_db_v1';
+function supabaseHeaders(extra){
+  return Object.assign({ apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, extra||{});
+}
+async function storageGet(key){
+  const url = `${SUPABASE_URL}/rest/v1/portal_storage?key=eq.${encodeURIComponent(key)}&select=value`;
+  const res = await fetch(url, { headers: supabaseHeaders() });
+  if(!res.ok) throw new Error('Falha ao buscar dados: '+res.status);
+  const rows = await res.json();
+  if(!rows.length) throw new Error('not found');
+  return rows[0].value;
+}
+async function storageSet(key, value){
+  const url = `${SUPABASE_URL}/rest/v1/portal_storage`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: supabaseHeaders({ 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' }),
+    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+  });
+  if(!res.ok) throw new Error('Falha ao salvar: '+res.status);
+}
+
+const ICONS = {
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  heart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`,
+  clock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+  lock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`,
+};
+
+const DS_QUESTIONS = [
+  "Aparelho Cardiovascular (Angina, Infarto, Hipertensão, Doença Reumática e Chagas, outras Valvulopatias, Aneurismas); já foi submetido a algum tratamento?",
+  "Aparelho Digestivo (Vesícula, Fígado, Pâncreas, Esôfago, Intestino e Outros)?",
+  "Aparelho Genito-Urinário (Cálculos, Ureter, Bexiga, Próstata, Infecção Urinária e Outras)?",
+  "Aparelho Respiratório (Asma, Bronquite, Enfisema, Pneumonia, Tuberculose, e Outras)?",
+  "Problemas Gineco-Obstétricos (Infertilidade, Distúrbios Menstruais, Gravidez, Períneo, Mioma, Cistos de Ovários e Trompas, Complicações no Parto, Sangramento ou Endometriose)?",
+  "Doenças Oculares (Deficiência Visual, Astigmatismo, Miopia, Catarata, Glaucoma, Estrabismo e Outros)?",
+  "Distúrbios Mentais e do Comportamento (Nervosismo, Ansiedade, Depressão, Esquizofrenia, Neurose, Ingestão de Álcool ou Drogas, Outros)?",
+  "Doenças de veias e artérias (Varizes, Trombose, Aneurismas)?",
+  "Doenças dos órgãos genitais masculinos (Próstata, Hidroceles, Outros)?",
+  "Doenças endócrinas ou metabólicas (Diabetes, Tireoide, Supra-Renal, Hipófise e Outras)?",
+  "Doenças da mama (Cistos, Displasias, Outros)?",
+  "Doenças do sistema imune (Lúpus, Artrite Reumatoide, Outras)?",
+  "Doenças neurológicas (Derrame, Paralisia, Epilepsia, Desmaios, Parkinson, Outras)?",
+  "Hérnias de qualquer natureza (Inguinal, Umbilical, Outras)?",
+  "Problemas hematológicos (Anemia, Leucemia, Coagulopatias, Outras)?",
+  "Malformações congênitas ou adquiridas?",
+  "Doenças otorrinolaringológicas (Otite, Sinusite, Amigdalite, Rinite, Faringite, Vertigem, Outras)?",
+  "É portador ou tem sequela de alguma doença neoplásica (Câncer)? Já fez cirurgia, quimioterapia ou radioterapia?",
+  "Doenças do aparelho osteolocomotor (Hérnia de Disco, Escoliose, Artrite, Artrose, Joanete, Osteomielite, Outras)? Já necessitou de cirurgia ou fisioterapia?",
+  "É portador ou tem sequela de doença infectocontagiosa (AIDS ou outras DSTs, Hepatite, Tuberculose, Meningite, Outras)?",
+  "Tem algum tratamento clínico ou cirúrgico indicado e ainda não realizado?",
+  "Deficiência de órgãos, membros ou sentidos?",
+  "Teve alguma internação clínica ou fez alguma cirurgia nos últimos 12 meses? Qual motivo?",
+  "Teve algum acidente que tenha deixado alguma sequela ou necessite de algum tratamento médico?",
+];
+const DS_FAMILY_QUESTIONS = ["História de câncer, hipertensão, infarto ou diabetes na família?", "História de alergias?"];
+
+function onlyDigits(v){ return (v||'').replace(/\D/g,''); }
+
+const params = new URLSearchParams(location.search);
+const CLIENT_ID = params.get('id');
+let DB = null;
+let CLIENT = null;
+let STEPS = [];
+let STEP_IDX = 0;
+const ANSWERS = {}; // ANSWERS[personKey] = {...}
+let ENDERECO = {};
+
+function listPessoasPublico(c){
+  return [{ key:'titular', label: c.titular.nome||'Titular', tipo:'Titular', pessoa:c.titular }]
+    .concat(c.dependentes.map((d,i)=>({ key:'dep'+i, label: d.nome||('Dependente '+(i+1)), tipo:(i+1)+'º Dependente', pessoa:d })));
+}
+
+async function boot(){
+  const app = document.getElementById('app');
+  if(!CLIENT_ID){
+    showError('Link inválido', 'Faltam informações no link. Peça um novo link para a CDL Mossoró.');
+    return;
+  }
+  try{
+    const raw = await storageGet(STORAGE_KEY);
+    DB = raw;
+    CLIENT = DB.clients.find(c=>c.id===CLIENT_ID);
+    if(!CLIENT){
+      showError('Cadastro não encontrado', 'Não localizamos seus dados. Fale com a CDL Mossoró para receber um novo link.');
+      return;
+    }
+    const pessoas = listPessoasPublico(CLIENT);
+    STEPS = ['intro','endereco', ...pessoas.map(p=>'pessoa:'+p.key)];
+    document.getElementById('heroSub').textContent = CLIENT.titular.razaoSocial || 'CDL Mossoró × Unimed';
+    renderStep();
+  }catch(e){
+    console.warn(e);
+    showError('Não foi possível carregar', 'Verifique sua internet e tente abrir o link de novo em alguns instantes.');
+  }
+}
+function showError(title, msg){
+  document.getElementById('app').innerHTML = `<div class="card"><div class="error-box"><h2>${title}</h2><p>${msg}</p></div></div>`;
+}
+
+function updateProgress(){
+  const pct = Math.round((STEP_IDX / (STEPS.length)) * 100);
+  const ring = document.getElementById('progressRing');
+  if(ring){ ring.style.setProperty('--pct', pct); document.getElementById('progressPct').textContent = pct+'%'; }
+}
+
+function renderStep(){
+  const stepId = STEPS[STEP_IDX];
+  const app = document.getElementById('app');
+  if(stepId === 'intro'){ renderIntro(app); return; }
+  if(stepId === 'endereco'){ renderEndereco(app); return; }
+  if(stepId.startsWith('pessoa:')){ renderPessoa(app, stepId.split(':')[1]); return; }
+}
+
+function frameShell(inner, opts){
+  opts = opts||{};
+  const label = opts.label || '';
+  return `
+    <div class="card">
+      ${opts.noProgress?'':`
+      <div class="progress-row">
+        <div class="progress-ring" id="progressRing" style="--pct:0"><span id="progressPct">0%</span></div>
+        <div class="progress-label">${label}</div>
+      </div>`}
+      ${inner}
+    </div>`;
+}
+
+function renderIntro(app){
+  const t = CLIENT.titular;
+  app.innerHTML = frameShell(`
+    <div style="text-align:center;">
+      <div class="intro-icon">${ICONS.heart}</div>
+      <h2 class="step-title">Olá${t.nome?(', '+t.nome.split(' ')[0]):''}!</h2>
+      <p class="step-sub">Pra concluir a adesão do plano de saúde da <b>${t.razaoSocial||'sua empresa'}</b>, precisamos completar mais algumas informações.</p>
+      <ul class="checklist">
+        <li>${ICONS.check}<span>Leva cerca de 5 a 8 minutos, dependendo de quantas pessoas estão no plano.</span></li>
+        <li>${ICONS.check}<span>Você pode fechar e voltar pelo mesmo link depois, se precisar.</span></li>
+        <li>${ICONS.check}<span>Suas respostas de saúde são confidenciais e usadas só para sua adesão.</span></li>
+      </ul>
+      <button class="btn btn-primary btn-block" onclick="goNext()">Começar</button>
+    </div>
+  `, {noProgress:true});
+}
+
+function renderEndereco(app){
+  const e = ENDERECO;
+  app.innerHTML = frameShell(`
+    <div class="step-head">
+      <div class="step-icon">${ICONS.home}</div>
+      <div class="eyebrow">Endereço</div>
+    </div>
+    <h2 class="step-title">Onde fica sua empresa?</h2>
+    <p class="step-sub">Usamos o CEP pra preencher o resto automaticamente.</p>
+
+    <div class="fg"><label>CEP</label><input id="f_cep" placeholder="00000-000" value="${e.cep||''}"><div class="field-hint" id="cepStatus"></div></div>
+    <div class="fg"><label>Endereço</label><input id="f_endereco" value="${e.endereco||''}"></div>
+    <div class="field-grid">
+      <div class="fg"><label>Número</label><input id="f_numero" value="${e.numero||''}"></div>
+      <div class="fg"><label>Complemento</label><input id="f_complemento" value="${e.complemento||''}"></div>
+    </div>
+    <div class="field-grid">
+      <div class="fg"><label>Bairro</label><input id="f_bairro" value="${e.bairro||''}"></div>
+      <div class="fg"><label>Cidade</label><input id="f_cidade" value="${e.cidade||'Mossoró'}"></div>
+    </div>
+
+    <div class="q-actions">
+      <button class="btn btn-ghost" onclick="goPrev()">Voltar</button>
+      <button class="btn btn-primary" onclick="saveEnderecoAndNext()">Continuar</button>
+    </div>
+  `, {label:'Endereço'});
+  updateProgress();
+  document.getElementById('f_cep').addEventListener('input', onCepInput);
+}
+function saveEnderecoAndNext(){
+  ENDERECO = {
+    cep: onlyDigits(document.getElementById('f_cep').value),
+    endereco: document.getElementById('f_endereco').value,
+    numero: document.getElementById('f_numero').value,
+    complemento: document.getElementById('f_complemento').value,
+    bairro: document.getElementById('f_bairro').value,
+    cidade: document.getElementById('f_cidade').value,
+  };
+  goNext();
+}
+let cepTimer = null;
+function onCepInput(e){
+  let v = onlyDigits(e.target.value).slice(0,8);
+  e.target.value = v.replace(/^(\d{5})(\d)/, '$1-$2');
+  clearTimeout(cepTimer);
+  if(v.length===8){ cepTimer = setTimeout(()=>lookupCep(v), 300); }
+}
+async function lookupCep(digits){
+  const statusEl = document.getElementById('cepStatus');
+  if(!statusEl) return; // a pessoa já saiu dessa etapa antes da busca terminar
+  statusEl.textContent = 'Buscando endereço...'; statusEl.className='field-hint';
+  try{
+    const r = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await r.json();
+    const statusEl2 = document.getElementById('cepStatus');
+    if(!statusEl2) return;
+    if(data.erro){ statusEl2.textContent = 'CEP não encontrado — preencha manualmente.'; return; }
+    const enderecoEl = document.getElementById('f_endereco');
+    if(!enderecoEl) return;
+    enderecoEl.value = data.logradouro||'';
+    document.getElementById('f_bairro').value = data.bairro||'';
+    document.getElementById('f_cidade').value = data.localidade||'Mossoró';
+    statusEl2.textContent = 'Endereço preenchido — confira o número.'; statusEl2.className='field-hint ok';
+  }catch(e){
+    const statusEl3 = document.getElementById('cepStatus');
+    if(statusEl3) statusEl3.textContent = 'Não conseguimos buscar agora — preencha manualmente.';
+  }
+}
+
+function renderPessoa(app, key){
+  const pessoas = listPessoasPublico(CLIENT);
+  const p = pessoas.find(x=>x.key===key);
+  const isTitular = key==='titular';
+  const ans = ANSWERS[key] || (ANSWERS[key] = {});
+  const totalQ = DS_QUESTIONS.length + DS_FAMILY_QUESTIONS.length;
+  const respondidas = DS_QUESTIONS.filter((q,i)=>ans['q'+i]!==undefined).length + DS_FAMILY_QUESTIONS.filter((q,i)=>ans['f'+i]!==undefined).length;
+
+  app.innerHTML = frameShell(`
+    <div class="step-head">
+      <div class="step-icon green">${ICONS.user}</div>
+      <div class="eyebrow">${p.tipo}</div>
+    </div>
+    <h2 class="step-title">${p.label}</h2>
+    <p class="step-sub">Complete os dados e a declaração de saúde desta pessoa.</p>
+
+    <div class="field-grid">
+      <div class="fg"><label>Sexo</label>
+        <select id="p_sexo">
+          <option value="">Selecione</option>
+          <option value="M" ${p.pessoa.sexo==='M'?'selected':''}>Masculino</option>
+          <option value="F" ${p.pessoa.sexo==='F'?'selected':''}>Feminino</option>
+        </select>
+      </div>
+      <div class="fg"><label>Nome da mãe</label><input id="p_mae" value="${p.pessoa.nomeMae||''}"></div>
+    </div>
+    ${isTitular?`
+    <div class="fg"><label>Estado civil</label>
+      <select id="p_civil">
+        <option value="">Selecione</option>
+        <option value="1" ${CLIENT.titular.estadoCivil==='1'?'selected':''}>Solteiro(a)</option>
+        <option value="2" ${CLIENT.titular.estadoCivil==='2'?'selected':''}>Casado(a)</option>
+        <option value="3" ${CLIENT.titular.estadoCivil==='3'?'selected':''}>Divorciado(a)</option>
+        <option value="4" ${CLIENT.titular.estadoCivil==='4'?'selected':''}>Viúvo(a)</option>
+        <option value="5" ${CLIENT.titular.estadoCivil==='5'?'selected':''}>União estável</option>
+      </select>
+    </div>`:''}
+    <div class="field-grid">
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="p_peso" value="${ans.peso||''}"></div>
+      <div class="fg"><label>Altura (cm)</label><input type="number" id="p_altura" value="${ans.altura||''}"></div>
+    </div>
+
+    <div class="section-title">Declaração de saúde</div>
+    <div class="ds-progress">
+      <span id="dsCount">${respondidas}/${totalQ}</span>
+      <div class="bar"><i id="dsBar" style="width:${Math.round(respondidas/totalQ*100)}%"></i></div>
+      <span style="color:var(--gray-soft);font-weight:600;">respondidas</span>
+    </div>
+    <p class="step-sub" style="margin-top:-6px;">Responda com sinceridade — isso não impede sua adesão, só ajuda a Unimed a te orientar melhor.</p>
+
+    <div id="dsQuestions">
+      ${DS_QUESTIONS.map((q,i)=>dsQuestionCard('q',i,q,ans)).join('')}
+    </div>
+
+    <div class="section-title">Histórico familiar</div>
+    <div id="dsFamily">
+      ${DS_FAMILY_QUESTIONS.map((q,i)=>dsQuestionCard('f',i,q,ans,true)).join('')}
+    </div>
+
+    <div class="q-actions">
+      <button class="btn btn-ghost" onclick="savePessoaData('${key}'); goPrev();">Voltar</button>
+      <button class="btn btn-primary" id="pessoaNextBtn" onclick="savePessoaAndNext('${key}')">${STEP_IDX===STEPS.length-1?'Enviar meus dados':'Continuar'}</button>
+    </div>
+  `, {label:p.tipo});
+  updateProgress();
+}
+function dsQuestionCard(prefix, i, text, ans, noDetail){
+  const val = ans[prefix+i];
+  const cls = val==='Sim' ? 'answered-sim' : val==='Não' ? 'answered-nao' : '';
+  return `
+    <div class="ds-q-card ${cls}" id="dsCard_${prefix}${i}">
+      <div><span class="ds-q-num">${i+1}</span><span class="ds-q-text">${text}</span></div>
+      <div class="ds-toggle">
+        <button type="button" id="btn_${prefix}${i}_nao" class="${val==='Não'?'active-nao':''}" onclick="setDs('${prefix}',${i},false,${!!noDetail})">Não</button>
+        <button type="button" id="btn_${prefix}${i}_sim" class="${val==='Sim'?'active-sim':''}" onclick="setDs('${prefix}',${i},true,${!!noDetail})">Sim</button>
+      </div>
+      ${noDetail?'':`<input class="ds-detail" id="det_${prefix}${i}" placeholder="Especifique" value="${ans[prefix+i+'_det']||''}" style="display:${val==='Sim'?'block':'none'};">`}
+    </div>`;
+}
+function setDs(prefix, i, isSim, noDetail){
+  const key = STEPS[STEP_IDX].split(':')[1];
+  const ans = ANSWERS[key] || (ANSWERS[key] = {});
+  ans[prefix+i] = isSim ? 'Sim' : 'Não';
+  document.getElementById(`btn_${prefix}${i}_nao`).classList.toggle('active-nao', !isSim);
+  document.getElementById(`btn_${prefix}${i}_sim`).classList.toggle('active-sim', isSim);
+  const card = document.getElementById(`dsCard_${prefix}${i}`);
+  card.classList.toggle('answered-sim', isSim);
+  card.classList.toggle('answered-nao', !isSim);
+  if(!noDetail){
+    const det = document.getElementById(`det_${prefix}${i}`);
+    det.style.display = isSim ? 'block' : 'none';
+  }
+  // atualiza contador
+  const totalQ = DS_QUESTIONS.length + DS_FAMILY_QUESTIONS.length;
+  const respondidas = DS_QUESTIONS.filter((q,idx)=>ans['q'+idx]!==undefined).length + DS_FAMILY_QUESTIONS.filter((q,idx)=>ans['f'+idx]!==undefined).length;
+  document.getElementById('dsCount').textContent = respondidas+'/'+totalQ;
+  document.getElementById('dsBar').style.width = Math.round(respondidas/totalQ*100)+'%';
+}
+function savePessoaData(key){
+  const ans = ANSWERS[key] || (ANSWERS[key] = {});
+  ans.sexoInput = document.getElementById('p_sexo').value;
+  ans.maeInput = document.getElementById('p_mae').value;
+  ans.peso = document.getElementById('p_peso').value;
+  ans.altura = document.getElementById('p_altura').value;
+  const civilEl = document.getElementById('p_civil');
+  if(civilEl) ans.civilInput = civilEl.value;
+  DS_QUESTIONS.forEach((q,i)=>{
+    const det = document.getElementById('det_q'+i);
+    if(det) ans['q'+i+'_det'] = det.value;
+  });
+}
+function savePessoaAndNext(key){
+  savePessoaData(key);
+  if(STEP_IDX===STEPS.length-1){ enviarFormulario(); }
+  else{ goNext(); }
+}
+
+function goNext(){ if(STEP_IDX<STEPS.length-1){ STEP_IDX++; renderStep(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function goPrev(){ if(STEP_IDX>0){ STEP_IDX--; renderStep(); window.scrollTo({top:0,behavior:'smooth'}); } }
+
+async function enviarFormulario(){
+  const btn = document.getElementById('pessoaNextBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+  const c = CLIENT;
+  c.propostaAdesao = Object.assign({}, c.propostaAdesao, ENDERECO, { uf: 'RN' });
+
+  const pessoas = listPessoasPublico(c);
+  pessoas.forEach(p=>{
+    const alvo = p.key==='titular' ? c.titular : c.dependentes[Number(p.key.replace('dep',''))];
+    const ans = ANSWERS[p.key] || {};
+    alvo.sexo = ans.sexoInput || alvo.sexo;
+    alvo.nomeMae = ans.maeInput || alvo.nomeMae;
+    if(p.key==='titular' && ans.civilInput) c.titular.estadoCivil = ans.civilInput;
+    const ds = {};
+    DS_QUESTIONS.forEach((q,i)=>{ ds['q'+i] = ans['q'+i]||'Não'; if(ds['q'+i]==='Sim') ds['q'+i+'_det'] = ans['q'+i+'_det']||''; });
+    DS_FAMILY_QUESTIONS.forEach((q,i)=>{ ds['f'+i] = ans['f'+i]||'Não'; });
+    ds.peso = ans.peso; ds.altura = ans.altura;
+    alvo.dsRespostas = ds;
+  });
+
+  c.formularioClientePreenchidoEm = new Date().toISOString();
+  if(c.etapaAdesao === 'nova' || c.etapaAdesao === 'documentacao'){ c.etapaAdesao = 'questionario'; }
+  c.historico = c.historico || [];
+  c.historico.push({ data:new Date().toISOString(), texto:'Cliente preencheu o formulário pelo link (endereço + declaração de saúde).' });
+
+  try{
+    const fresh = await storageGet(STORAGE_KEY);
+    const idx = fresh.clients.findIndex(x=>x.id===CLIENT_ID);
+    if(idx>=0) fresh.clients[idx] = c; else fresh.clients.push(c);
+    await storageSet(STORAGE_KEY, fresh);
+    showSuccess();
+  }catch(e){
+    console.warn(e);
+    if(btn){ btn.disabled = false; btn.textContent = 'Enviar meus dados'; }
+    alert('Não foi possível enviar agora. Verifique sua internet e tente novamente.');
+  }
+}
+
+function showSuccess(){
+  document.getElementById('app').innerHTML = frameShell(`
+    <div style="text-align:center;">
+      <div class="success-icon">${ICONS.check}</div>
+      <h2 class="step-title">Recebemos seus dados!</h2>
+      <p class="step-sub">Obrigado por completar as informações. Nosso time da CDL Mossoró já está com tudo em mãos pra dar andamento à sua adesão junto à Unimed.</p>
+    </div>
+  `, {noProgress:true});
+}
+
+document.getElementById('footnoteArea').innerHTML =
+  `<p class="footnote">${ICONS.lock} Seus dados são de responsabilidade da Nossa Corretora de Seguros e usados só para sua adesão junto à CDL Mossoró e Unimed, em conformidade com a LGPD.</p>`;
+boot();
+</script>
+
+</body>
+</html>
