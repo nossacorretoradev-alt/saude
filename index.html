@@ -69,7 +69,6 @@ button{ font-family:inherit; cursor:pointer; }
 
 /* ===== HERO ===== */
 .hero{ position:relative; overflow:hidden; padding:56px 0 40px; background:var(--navy); }
-.hero-spiral{ position:absolute; top:-40px; right:-60px; width:340px; height:340px; opacity:.25; }
 .hero .wrap{ position:relative; z-index:1; text-align:center; }
 .hero-badge{
   display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.08); color:#fff;
@@ -313,23 +312,25 @@ button{ font-family:inherit; cursor:pointer; }
 .plan-type-list li{ font-size:13px; color:var(--ink); padding:7px 0 7px 26px; position:relative; border-top:1px dashed var(--line); }
 .plan-type-list li:first-child{ border-top:none; }
 .cdl-benefits-section{ padding:60px 0; background:var(--cream); }
-.cdl-tier-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-top:32px; }
-@media (max-width:1000px){ .cdl-tier-grid{ grid-template-columns:1fr 1fr; } }
-@media (max-width:560px){ .cdl-tier-grid{ grid-template-columns:1fr; } }
+.cdl-tier-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:36px; }
+@media (max-width:760px){ .cdl-tier-grid{ grid-template-columns:1fr; } }
 .cdl-tier-card{
-  border:1.5px solid var(--line); border-radius:var(--radius-lg); padding:22px 20px; position:relative;
+  border:1.5px solid var(--line); border-radius:var(--radius-lg); padding:32px 30px; position:relative;
   display:flex; flex-direction:column; background:var(--paper); transition:.2s;
 }
 .cdl-tier-card:hover{ box-shadow:var(--shadow-card); transform:translateY(-3px); }
 .cdl-tier-card.featured{ border-color:var(--green); background:var(--green-tint); }
-.cdl-tier-name{ font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--navy); margin-top:6px; }
-.cdl-tier-price{ font-family:var(--font-display); font-weight:900; font-size:19px; color:var(--navy); margin:6px 0 14px; line-height:1.25; }
-.cdl-tier-price small{ font-size:11px; font-weight:600; color:var(--gray-soft); }
-.cdl-tier-list{ list-style:none; margin:0; padding:0; flex:1; }
-.cdl-tier-list li{ font-size:12px; color:var(--ink); line-height:1.5; padding:7px 0 7px 20px; position:relative; border-top:1px dashed var(--line); }
-.cdl-tier-list li:first-child{ border-top:none; }
-.cdl-tier-list li::before{ content:"✓"; position:absolute; left:0; top:7px; color:var(--green); font-weight:800; font-size:11px; }
-.cdl-tier-note{ font-size:11px; color:var(--gray); margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+.cdl-tier-header{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+.cdl-tier-card.featured .cdl-tier-header{ border-bottom-color:rgba(21,148,66,0.25); }
+.cdl-tier-name{ font-family:var(--font-display); font-weight:800; font-size:18px; color:var(--navy); }
+.cdl-tier-price{ font-family:var(--font-display); font-weight:900; font-size:22px; color:var(--navy); line-height:1.2; white-space:nowrap; }
+.cdl-tier-price small{ font-size:12.5px; font-weight:600; color:var(--gray-soft); }
+.cdl-tier-list{ list-style:none; margin:18px 0 0; padding:0; flex:1; }
+.cdl-tier-list li{ font-size:13.5px; color:var(--ink); line-height:1.55; padding:10px 0 10px 26px; position:relative; border-top:1px dashed var(--line); }
+.cdl-tier-list li:first-child{ border-top:none; padding-top:0; }
+.cdl-tier-list li::before{ content:"✓"; position:absolute; left:0; top:10px; color:var(--green); font-weight:800; font-size:13px; }
+.cdl-tier-list li:first-child::before{ top:0; }
+.cdl-tier-note{ font-size:12px; color:var(--gray); margin-top:18px; padding-top:16px; border-top:1px dashed var(--line); }
 .plan-type-list li::before{
   content:""; position:absolute; left:0; top:11px; width:14px; height:14px; border-radius:50%;
   background:var(--green-tint); border:1.5px solid var(--green);
@@ -359,20 +360,14 @@ button{ font-family:inherit; cursor:pointer; }
 .footer-col h5{ font-family:var(--font-display); color:#fff; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
 .footer-col p, .footer-col a{ font-size:13px; color:#AEB3D6; line-height:1.8; text-decoration:none; display:block; }
 .footer-col a:hover{ color:#fff; }
-.footer-privacy{
-  display:flex; align-items:flex-start; gap:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
-  border-radius:14px; padding:16px 18px; margin-bottom:22px;
-}
-.footer-privacy svg{ width:20px; height:20px; color:var(--green-bright); flex-shrink:0; margin-top:1px; }
-.footer-privacy p{ font-size:12px; line-height:1.6; color:#AEB3D6; margin:0; }
-.footer-privacy p b{ color:#fff; }
 .footer-bottom{ border-top:1px solid rgba(255,255,255,0.12); padding-top:18px; text-align:center; font-size:11.5px; color:#7A80AD; }
 .vendedor-tag{ display:inline-flex; align-items:center; gap:6px; background:rgba(62,203,116,0.12); color:var(--green-bright); font-size:11.5px; font-weight:700; padding:6px 14px; border-radius:999px; margin-bottom:14px; }
+.vendedor-whats-btn{ display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#00042D; font-size:12.5px; font-weight:800; padding:9px 18px; border-radius:999px; margin-bottom:14px; text-decoration:none; }
+.vendedor-whats-btn:hover{ filter:brightness(1.05); }
 @media (max-width:680px){
   .footer-grid{ grid-template-columns:1fr; gap:26px; text-align:center; }
   .footer-col{ display:flex; flex-direction:column; align-items:center; }
   .footer-col img{ margin-left:auto; margin-right:auto; }
-  .footer-privacy{ flex-direction:column; align-items:center; text-align:center; }
 }
 
 @media (max-width:560px){
@@ -796,16 +791,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </header>
 
 <section class="hero">
-  <svg class="hero-spiral" viewBox="0 0 200 200" fill="none">
-    <g stroke="#3A4380" stroke-width="3">
-      <path d="M100 100 Q 130.7 116.8 160.7 169.1"/><path d="M100 100 Q 118.2 129.9 118.0 190.2"/>
-      <path d="M100 100 Q 100.8 135.0 70.5 187.1"/><path d="M100 100 Q 83.2 130.7 30.9 160.7"/>
-      <path d="M100 100 Q 70.1 118.2 9.8 118.0"/><path d="M100 100 Q 65.0 100.8 12.9 70.5"/>
-      <path d="M100 100 Q 69.3 83.2 39.3 30.9"/><path d="M100 100 Q 81.8 70.1 82.0 9.8"/>
-      <path d="M100 100 Q 99.2 65.0 129.5 12.9"/><path d="M100 100 Q 116.8 69.3 169.1 39.3"/>
-      <path d="M100 100 Q 129.9 81.8 190.2 82.0"/><path d="M100 100 Q 135.0 99.2 187.1 129.5"/>
-    </g>
-  </svg>
   <div class="wrap">
     <div class="hero-badge"><b>Exclusivo</b>&nbsp;para associados da CDL Mossoró</div>
     <h1>Descubra em <span>3 minutos</span> quanto sua empresa economiza no plano de saúde</h1>
@@ -1266,70 +1251,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   </div>
 </section>
 
-<section class="cdl-benefits-section">
-  <div class="wrap">
-    <h2 class="plans-title">Vantagens de ser associado CDL Mossoró</h2>
-    <p class="plans-sub">Além das condições especiais no plano de saúde Unimed, ser associado CDL abre outras portas pro seu negócio. Veja as categorias disponíveis.</p>
-
-    <div class="cdl-tier-grid">
-      <div class="cdl-tier-card">
-        <div class="cdl-tier-name">Usuário SPC — Faturamento 1</div>
-        <div class="cdl-tier-price">A partir de<br><b>R$ 48,00</b><small>/mês</small></div>
-        <ul class="cdl-tier-list">
-          <li>50% OFF em Certificado Digital</li>
-          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
-          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
-          <li>Condições especiais em plano de saúde Unimed</li>
-          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
-        </ul>
-      </div>
-
-      <div class="cdl-tier-card">
-        <div class="cdl-tier-name">Usuário SPC — Faturamento 2</div>
-        <div class="cdl-tier-price"><b>R$ 58,00</b><small>/mês</small></div>
-        <ul class="cdl-tier-list">
-          <li>2 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 7 negativações no SPC</li>
-          <li>50% OFF em Certificado Digital</li>
-          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
-          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
-          <li>Condições especiais em plano de saúde Unimed</li>
-          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
-        </ul>
-      </div>
-
-      <div class="cdl-tier-card">
-        <div class="cdl-tier-name">Usuário SPC — Faturamento 3</div>
-        <div class="cdl-tier-price"><b>R$ 78,00</b><small>/mês</small></div>
-        <ul class="cdl-tier-list">
-          <li>5 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 13 negativações no SPC</li>
-          <li>50% OFF em Certificado Digital</li>
-          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
-          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
-          <li>Condições especiais em plano de saúde Unimed</li>
-          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
-        </ul>
-      </div>
-
-      <div class="cdl-tier-card featured">
-        <span class="plan-type-badge">Categoria mais completa</span>
-        <div class="cdl-tier-name">Associado CDL</div>
-        <div class="cdl-tier-price">A partir de<br><b>R$ 145,00</b><small>/mês</small></div>
-        <ul class="cdl-tier-list">
-          <li>12 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 27 negativações</li>
-          <li>50% OFF em Certificado Digital</li>
-          <li>Grupo de WhatsApp exclusivo para networking</li>
-          <li>Direito a voto e representação política (conforme estatuto)</li>
-          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
-          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
-          <li>Condições especiais em plano de saúde Unimed</li>
-          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
-        </ul>
-        <p class="cdl-tier-note">Sujeita à aprovação em reunião de diretoria, conforme normas estatutárias da entidade.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section class="plans-section">
   <div class="wrap">
     <h2 class="plans-title">Conheça os planos disponíveis</h2>
@@ -1386,6 +1307,78 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </section>
 
 
+<section class="cdl-benefits-section">
+  <div class="wrap">
+    <h2 class="plans-title">Vantagens de ser associado CDL Mossoró</h2>
+    <p class="plans-sub">Além das condições especiais no plano de saúde Unimed, ser associado CDL abre outras portas pro seu negócio. Veja as categorias disponíveis.</p>
+
+    <div class="cdl-tier-grid">
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-header">
+          <div class="cdl-tier-name">Usuário SPC<br>Faturamento 1</div>
+          <div class="cdl-tier-price">R$ 48<small>/mês</small></div>
+        </div>
+        <ul class="cdl-tier-list">
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-header">
+          <div class="cdl-tier-name">Usuário SPC<br>Faturamento 2</div>
+          <div class="cdl-tier-price">R$ 58<small>/mês</small></div>
+        </div>
+        <ul class="cdl-tier-list">
+          <li>2 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 7 negativações no SPC</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-header">
+          <div class="cdl-tier-name">Usuário SPC<br>Faturamento 3</div>
+          <div class="cdl-tier-price">R$ 78<small>/mês</small></div>
+        </div>
+        <ul class="cdl-tier-list">
+          <li>5 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 13 negativações no SPC</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card featured">
+        <span class="plan-type-badge">Categoria mais completa</span>
+        <div class="cdl-tier-header">
+          <div class="cdl-tier-name">Associado CDL</div>
+          <div class="cdl-tier-price">R$ 145<small>/mês</small></div>
+        </div>
+        <ul class="cdl-tier-list">
+          <li>12 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 27 negativações</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Grupo de WhatsApp exclusivo para networking</li>
+          <li>Direito a voto e representação política (conforme estatuto)</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+        <p class="cdl-tier-note">Sujeita à aprovação em reunião de diretoria, conforme normas estatutárias da entidade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="faq-section">
   <div class="wrap">
     <h2 class="faq-title">Perguntas frequentes</h2>
@@ -1434,10 +1427,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <h5>Legal</h5>
         <a href="termos-de-uso.html">Termos de Uso e Participação</a>
       </div>
-    </div>
-    <div class="footer-privacy">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-      <p><b>Seus dados estão protegidos.</b> Todas as informações preenchidas nesta simulação são de responsabilidade da Nossa Corretora de Seguros e tratadas em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018). Seus dados são usados exclusivamente para gerar sua cotação e dar andamento à adesão junto à CDL Mossoró e à Unimed — nunca compartilhados com terceiros sem sua autorização.</p>
     </div>
     <div class="footer-bottom">
       <div id="vendedorFooterTag"></div>
@@ -1499,14 +1488,20 @@ async function identificarVendedorNoRodape(){
   try{
     const { data } = await supabaseClient
       .from("vendedores_publico")
-      .select("nome,ativo")
+      .select("nome,ativo,celular")
       .eq("codigo", vendedorCodigo)
       .maybeSingle();
     const el = document.getElementById("vendedorFooterTag");
     if(!el) return;
     if(data && data.ativo && data.nome){
       const primeiroNome = data.nome.split(" ")[0];
-      el.innerHTML = `<span class="vendedor-tag">${primeiroNome} está te acompanhando nesta simulação</span><br>`;
+      const celularDigits = (data.celular||"").replace(/\D/g,"");
+      const botaoWhats = celularDigits ? `
+        <a class="vendedor-whats-btn" href="https://api.whatsapp.com/send?phone=55${celularDigits}&text=${encodeURIComponent('Olá '+primeiroNome+'! Vim pelo simulador de planos da CDL Mossoró e queria falar com você.')}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;"><path d="M17.6 6.3A8.5 8.5 0 003.5 16.4L2 22l5.7-1.5A8.5 8.5 0 1017.6 6.3zm-5.6 13a7 7 0 01-3.6-1l-.3-.2-2.7.7.7-2.6-.2-.3a7 7 0 116.1 3.4zm3.9-5.2c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1s-.6.7-.8.9-.3.2-.6.1a5.7 5.7 0 01-1.7-1 6.4 6.4 0 01-1.2-1.5c-.1-.2 0-.3.1-.5l.4-.4.2-.4v-.4C10 9 9.5 7.8 9.3 7.3s-.4-.4-.5-.4h-.5a.9.9 0 00-.6.3 2.7 2.7 0 00-.9 2 4.7 4.7 0 00.9 2.5c.1.2 1.6 2.5 4 3.5.5.2 1 .4 1.3.5a3.1 3.1 0 001.4.1 2.3 2.3 0 001.5-1.1c.2-.3.2-.6.1-.7s-.2-.2-.4-.3z"/></svg>
+          Falar com ${primeiroNome} no WhatsApp
+        </a>` : '';
+      el.innerHTML = `<span class="vendedor-tag">${primeiroNome} está te acompanhando nesta simulação</span><br>${botaoWhats}`;
     }
   }catch(e){
     console.warn("Não foi possível identificar o vendedor no rodapé.", e);
