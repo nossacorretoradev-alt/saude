@@ -146,6 +146,20 @@ button{ font-family:inherit; cursor:pointer; }
 }
 .field input:focus, .field select:focus{ outline:none; border-color:var(--navy); background:#fff; }
 .field-error{ color:var(--warn); font-size:12.5px; margin-top:6px; display:none; }
+.cdl-choice-list{ display:flex; flex-direction:column; gap:10px; margin:18px 0 6px; }
+.cdl-choice-card{
+  display:flex; align-items:center; gap:14px; border:1.5px solid var(--line); border-radius:14px;
+  padding:14px 16px; cursor:pointer; transition:.15s; position:relative;
+}
+.cdl-choice-card:hover{ border-color:var(--navy); }
+.cdl-choice-card input{ width:18px; height:18px; flex-shrink:0; accent-color:var(--green); }
+.cdl-choice-card:has(input:checked){ border-color:var(--green); background:var(--green-tint); }
+.cdl-choice-card.featured{ border-color:var(--green); }
+.cdl-choice-info{ flex:1; min-width:0; }
+.cdl-choice-name{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--navy); }
+.cdl-choice-desc{ font-size:12px; color:var(--gray); margin-top:3px; line-height:1.45; }
+.cdl-choice-price{ font-family:var(--font-display); font-weight:900; font-size:16px; color:var(--navy); text-align:right; flex-shrink:0; white-space:nowrap; }
+.cdl-choice-price small{ font-size:10.5px; font-weight:600; color:var(--gray-soft); display:block; }
 .field-hint{ font-size:12px; margin-top:6px; min-height:15px; color:var(--gray-soft); }
 .field-hint.ok{ color:var(--green); font-weight:600; }
 .field-hint.err{ color:var(--warn); }
@@ -298,6 +312,24 @@ button{ font-family:inherit; cursor:pointer; }
 .plan-type-list{ list-style:none; margin:0 0 22px; padding:0; flex:1; }
 .plan-type-list li{ font-size:13px; color:var(--ink); padding:7px 0 7px 26px; position:relative; border-top:1px dashed var(--line); }
 .plan-type-list li:first-child{ border-top:none; }
+.cdl-benefits-section{ padding:60px 0; background:var(--cream); }
+.cdl-tier-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-top:32px; }
+@media (max-width:1000px){ .cdl-tier-grid{ grid-template-columns:1fr 1fr; } }
+@media (max-width:560px){ .cdl-tier-grid{ grid-template-columns:1fr; } }
+.cdl-tier-card{
+  border:1.5px solid var(--line); border-radius:var(--radius-lg); padding:22px 20px; position:relative;
+  display:flex; flex-direction:column; background:var(--paper); transition:.2s;
+}
+.cdl-tier-card:hover{ box-shadow:var(--shadow-card); transform:translateY(-3px); }
+.cdl-tier-card.featured{ border-color:var(--green); background:var(--green-tint); }
+.cdl-tier-name{ font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--navy); margin-top:6px; }
+.cdl-tier-price{ font-family:var(--font-display); font-weight:900; font-size:19px; color:var(--navy); margin:6px 0 14px; line-height:1.25; }
+.cdl-tier-price small{ font-size:11px; font-weight:600; color:var(--gray-soft); }
+.cdl-tier-list{ list-style:none; margin:0; padding:0; flex:1; }
+.cdl-tier-list li{ font-size:12px; color:var(--ink); line-height:1.5; padding:7px 0 7px 20px; position:relative; border-top:1px dashed var(--line); }
+.cdl-tier-list li:first-child{ border-top:none; }
+.cdl-tier-list li::before{ content:"✓"; position:absolute; left:0; top:7px; color:var(--green); font-weight:800; font-size:11px; }
+.cdl-tier-note{ font-size:11px; color:var(--gray); margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
 .plan-type-list li::before{
   content:""; position:absolute; left:0; top:11px; width:14px; height:14px; border-radius:50%;
   background:var(--green-tint); border:1.5px solid var(--green);
@@ -894,7 +926,53 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div class="q-actions">
           <button class="btn btn-ghost" onclick="prev()">Voltar</button>
-          <button class="btn btn-primary" onclick="next()">Preencher ficha de adesão</button>
+          <button class="btn btn-primary" onclick="next()">Escolher meu plano CDL</button>
+        </div>
+      </div>
+
+      <!-- ESCOLHA DO PLANO CDL -->
+      <div class="q-step" id="step-planoCDL">
+        <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><div class="q-eyebrow">Etapa 2</div></div>
+        <h2 class="q-title">Qual categoria de associado você quer?</h2>
+        <p class="q-sub">Escolha a categoria — dá pra mudar depois com a CDL, se precisar.</p>
+        <div class="cdl-choice-list">
+          <label class="cdl-choice-card">
+            <input type="radio" name="planoCDL" value="spc1" onchange="selecionarPlanoCDL('spc1')">
+            <div class="cdl-choice-info">
+              <div class="cdl-choice-name">Usuário SPC — Faturamento 1</div>
+              <div class="cdl-choice-desc">Certificado digital, descontos em espaços e cursos, condições Unimed.</div>
+            </div>
+            <div class="cdl-choice-price">R$ 48,00<small>/mês</small></div>
+          </label>
+          <label class="cdl-choice-card">
+            <input type="radio" name="planoCDL" value="spc2" onchange="selecionarPlanoCDL('spc2')">
+            <div class="cdl-choice-info">
+              <div class="cdl-choice-name">Usuário SPC — Faturamento 2</div>
+              <div class="cdl-choice-desc">2 consultas SPC Brasil e/ou 7 negativações, + benefícios do faturamento 1.</div>
+            </div>
+            <div class="cdl-choice-price">R$ 58,00<small>/mês</small></div>
+          </label>
+          <label class="cdl-choice-card">
+            <input type="radio" name="planoCDL" value="spc3" onchange="selecionarPlanoCDL('spc3')">
+            <div class="cdl-choice-info">
+              <div class="cdl-choice-name">Usuário SPC — Faturamento 3</div>
+              <div class="cdl-choice-desc">5 consultas SPC Brasil e/ou 13 negativações, + benefícios do faturamento 1.</div>
+            </div>
+            <div class="cdl-choice-price">R$ 78,00<small>/mês</small></div>
+          </label>
+          <label class="cdl-choice-card featured">
+            <input type="radio" name="planoCDL" value="associado" onchange="selecionarPlanoCDL('associado')">
+            <div class="cdl-choice-info">
+              <div class="cdl-choice-name">Associado CDL <span class="plan-type-badge" style="position:static;display:inline-block;margin-left:6px;">Mais completo</span></div>
+              <div class="cdl-choice-desc">12 consultas SPC Brasil e/ou 27 negativações, grupo de WhatsApp exclusivo, direito a voto. Sujeito à aprovação em reunião de diretoria.</div>
+            </div>
+            <div class="cdl-choice-price">R$ 145,00<small>/mês</small></div>
+          </label>
+        </div>
+        <div class="field-error" id="planoCDLError">Escolha uma categoria pra continuar.</div>
+        <div class="q-actions">
+          <button class="btn btn-ghost" onclick="prev()">Voltar</button>
+          <button class="btn btn-primary" onclick="validatePlanoCDLStep()">Continuar</button>
         </div>
       </div>
 
@@ -1184,6 +1262,70 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:3px;"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
       Seus dados são usados apenas para gerar sua cotação junto à CDL Mossoró e Unimed, sob responsabilidade da Nossa Corretora e em conformidade com a LGPD.
     </p>
+  </div>
+</section>
+
+<section class="cdl-benefits-section">
+  <div class="wrap">
+    <h2 class="plans-title">Vantagens de ser associado CDL Mossoró</h2>
+    <p class="plans-sub">Além das condições especiais no plano de saúde Unimed, ser associado CDL abre outras portas pro seu negócio. Veja as categorias disponíveis.</p>
+
+    <div class="cdl-tier-grid">
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-name">Usuário SPC — Faturamento 1</div>
+        <div class="cdl-tier-price">A partir de<br><b>R$ 48,00</b><small>/mês</small></div>
+        <ul class="cdl-tier-list">
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-name">Usuário SPC — Faturamento 2</div>
+        <div class="cdl-tier-price"><b>R$ 58,00</b><small>/mês</small></div>
+        <ul class="cdl-tier-list">
+          <li>2 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 7 negativações no SPC</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card">
+        <div class="cdl-tier-name">Usuário SPC — Faturamento 3</div>
+        <div class="cdl-tier-price"><b>R$ 78,00</b><small>/mês</small></div>
+        <ul class="cdl-tier-list">
+          <li>5 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 13 negativações no SPC</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+      </div>
+
+      <div class="cdl-tier-card featured">
+        <span class="plan-type-badge">Categoria mais completa</span>
+        <div class="cdl-tier-name">Associado CDL</div>
+        <div class="cdl-tier-price">A partir de<br><b>R$ 145,00</b><small>/mês</small></div>
+        <ul class="cdl-tier-list">
+          <li>12 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 27 negativações</li>
+          <li>50% OFF em Certificado Digital</li>
+          <li>Grupo de WhatsApp exclusivo para networking</li>
+          <li>Direito a voto e representação política (conforme estatuto)</li>
+          <li>Descontos em locação de espaços no Auditório e Sala de Reunião</li>
+          <li>Descontos em palestras e cursos promovidos pela CDL e parceiros</li>
+          <li>Condições especiais em plano de saúde Unimed</li>
+          <li>Descontos no Hotel Serrano (Martins) e Hotel Costa Atlântico (Areia Branca)</li>
+        </ul>
+        <p class="cdl-tier-note">Sujeita à aprovação em reunião de diretoria, conforme normas estatutárias da entidade.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1546,7 +1688,7 @@ async function validateCnpjStep(evt){
       flow = ["intro","cnpj","statusOk","contatoAssociado","vidas","planoAtivo","fatura","resultado","sucesso"];
     }
   } else {
-    flow = ["intro","cnpj","statusWarn","contractForm","contractPreview","signature","affiliateWelcome","vidas","planoAtivo","fatura","resultado","sucesso"];
+    flow = ["intro","cnpj","statusWarn","planoCDL","contractForm","contractPreview","signature","affiliateWelcome","vidas","planoAtivo","fatura","resultado","sucesso"];
   }
   idx = 2; // "statusOk" ou "statusWarn" — sempre a 3ª posição (intro, cnpj, status...)
   showStepId(flow[idx]);
@@ -1642,6 +1784,25 @@ let signedContractBlobUrl = null;
 let signedAtGlobal = null;
 let signatureAudit = null;
 
+const CDL_TIERS = {
+  spc1: { nome: "Usuário SPC — Faturamento 1", valor: 48.00 },
+  spc2: { nome: "Usuário SPC — Faturamento 2", valor: 58.00 },
+  spc3: { nome: "Usuário SPC — Faturamento 3", valor: 78.00 },
+  associado: { nome: "Associado CDL", valor: 145.00 },
+};
+let chosenCdlTier = null;
+function selecionarPlanoCDL(key){
+  chosenCdlTier = key;
+  document.getElementById("planoCDLError").style.display = "none";
+}
+function validatePlanoCDLStep(){
+  if(!chosenCdlTier){
+    document.getElementById("planoCDLError").style.display = "block";
+    return;
+  }
+  next();
+}
+
 function validateContractForm(){
   const required = ["razaoSocial","ramoAtividade","diretorResponsavel","cpfDiretor","enderecoRua","bairro","cidade","cep","emailDiretor"];
   let ok = true;
@@ -1695,7 +1856,7 @@ function buildContractHTML(){
     ["E-mail (Financeiro)", v('emailFinanceiro')],
     ["Nome do Contador", v('nomeContador')],
     ["Telefone Contador", v('telContador')],
-    ["Valor do pacote contratado", "a definir pela CDL Mossoró (taxa de adesão)"],
+    ["Categoria de associado escolhida", chosenCdlTier ? `${CDL_TIERS[chosenCdlTier].nome} — ${formatBRL(CDL_TIERS[chosenCdlTier].valor)}/mês` : "<em>não informado</em>"],
   ];
   const tableHTML = rows.map(([label,val])=>`<tr><td><b>${label}:</b></td><td>${val}</td></tr>`).join("");
   const clausesHTML = CONTRACT_CLAUSES.map(c=>`<h4>${c.h}</h4>` + c.p.map(p=>`<p>${p}</p>`).join("")).join("");
@@ -1833,7 +1994,7 @@ function buildContractPDF(signatureDataUrl, signedAt){
     ["E-mail (Financeiro)", v('emailFinanceiro')],
     ["Nome do Contador", v('nomeContador')],
     ["Telefone Contador", v('telContador')],
-    ["Valor do pacote contratado", "a definir pela CDL Mossoró (taxa de adesão)"]
+    ["Categoria de associado escolhida", chosenCdlTier ? `${CDL_TIERS[chosenCdlTier].nome} — ${formatBRL(CDL_TIERS[chosenCdlTier].valor)}/mês` : "não informado"]
   ];
   doc.setFontSize(9);
   rows.forEach(([label, val], i)=>{
@@ -2358,6 +2519,7 @@ async function finalizarAdesao(evt){
     valor_atual: valorAtual ? Number(valorAtual) : null,
     qtd_vidas: n, // quantidade informada — os dados de cada pessoa são completados depois, pelo link individual
     vendedor_codigo: vendedorCodigo || null,
+    plano_cdl_escolhido: chosenCdlTier ? CDL_TIERS[chosenCdlTier].nome : null,
     vidas: []
   };
   console.log("Lead + adesão:", payload);
