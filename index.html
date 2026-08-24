@@ -1810,6 +1810,7 @@ let contractPdfBlobUrl = null;
 let signedContractBlobUrl = null;
 let signedAtGlobal = null;
 let signatureAudit = null;
+let orcamentoPdfPath = null;
 
 const CDL_TIERS = {
   spc1: { nome: "Usuário SPC — Faturamento 1", valor: 48.00 },
@@ -2479,7 +2480,18 @@ function generateOrcamentoPDF(planKey){
   doc.text("Fale com seu consultor: Elder Delfino · WhatsApp (84) 98839.3433", 15, y);
 
   const empresaSlug = (contato.empresa || "orcamento").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-  doc.save(`orcamento-${plano.nome.toLowerCase().replace(/\s+/g,"-")}-${empresaSlug || "empresa"}.pdf`);
+  const orcamentoFilename = `orcamento-${plano.nome.toLowerCase().replace(/\s+/g,"-")}-${empresaSlug || "empresa"}.pdf`;
+  doc.save(orcamentoFilename);
+
+  // Também envia uma cópia pro Storage privado, pra ficar disponível no portal como anexo do cliente
+  try{
+    const pdfBlob = doc.output("blob");
+    const path = `${Date.now()}-${orcamentoFilename}`;
+    supabaseClient.storage.from("internal-docs").upload(path, pdfBlob, { contentType: "application/pdf" })
+      .then(({ error })=>{ if(!error) orcamentoPdfPath = path; else console.warn("Falha ao guardar cópia do orçamento:", error); });
+  }catch(e){
+    console.warn("Erro ao preparar cópia do orçamento para o Storage:", e);
+  }
 }
 
 function maskWeight(v){
@@ -2541,6 +2553,7 @@ async function finalizarAdesao(evt){
     assinatura_base64: signatureDataUrl,
     fatura_path: faturaPath,
     internal_pdf_path: internalPdfPath, // contrato + carimbo de evidências — só acessível pelo painel do Supabase
+    orcamento_path: orcamentoPdfPath, // cópia do orçamento em PDF que o cliente baixou
     plano_escolhido: chosenPlanKey ? PLAN_VALUES[chosenPlanKey].nome : null,
     administradora_atual: administradoraAtual,
     valor_atual: valorAtual ? Number(valorAtual) : null,
