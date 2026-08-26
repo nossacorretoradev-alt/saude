@@ -1526,6 +1526,8 @@ let isAssociado = null;
 let empresaEncontrada = "";
 let emailAssociadoReal = "";
 let codigoVerificacaoEnviado = false;
+let codigoEnviadoEm = 0;
+let tentativasCodigo = 0;
 let signatureDataUrl = null;
 let zapsignSignature = null;
 
@@ -1659,11 +1661,11 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 // Crie uma conta grátis em emailjs.com e troque os 3 valores abaixo pelos seus.
 // Sem isso configurado, o código é gerado normalmente mas o e-mail não é enviado de verdade
 // (fica só registrado no console, útil pra testar o resto do fluxo).
-const EMAILJS_PUBLIC_KEY = "SUA_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "SEU_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "SEU_TEMPLATE_ID";
-if(window.emailjs && EMAILJS_PUBLIC_KEY !== "SUA_PUBLIC_KEY"){
-  emailjs.init(EMAILJS_PUBLIC_KEY);
+const EMAILJS_PUBLIC_KEY = "Fi9DBBdQudyAFWZj7";
+const EMAILJS_SERVICE_ID = "service_rvpfu9c";
+const EMAILJS_TEMPLATE_ID = "template_812iykc";
+if(window.emailjs){
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 }
 
 async function validateCnpjStep(evt){
@@ -1730,32 +1732,38 @@ async function validateCnpjStep(evt){
    nem inspecionando as chamadas de rede. */
 async function enviarCodigoVerificacao(){
   const btn = document.getElementById("enviarCodigoBtn");
+  const agora = Date.now();
+  if(codigoEnviadoEm && agora-codigoEnviadoEm<60000){
+    alert(`Aguarde ${Math.ceil((60000-(agora-codigoEnviadoEm))/1000)} segundos antes de solicitar outro código.`);
+    return;
+  }
+  if(!emailAssociadoReal){ alert("A empresa não possui e-mail cadastrado para validação."); return; }
   if(btn){ btn.disabled = true; btn.textContent = "Enviando..."; }
 
   const cnpjDigits = onlyDigits(document.getElementById("cnpj").value);
   const codigo = String(Math.floor(100000 + Math.random()*900000)); // 6 dígitos
 
   try{
-    await supabaseClient.from("verificacoes_cnpj").insert({
+    const { error: insertError } = await supabaseClient.from("verificacoes_cnpj").insert({
       cnpj: cnpjDigits,
       codigo,
       expira_em: new Date(Date.now() + 10*60*1000).toISOString(), // 10 minutos
       verificado: false,
     });
+    if(insertError) throw insertError;
 
     // Envio real do e-mail via EmailJS — troque as 3 credenciais abaixo pelas suas
     // (emailjs.com, gratuito, sem precisar de servidor próprio)
-    if(window.emailjs && EMAILJS_SERVICE_ID !== "SEU_SERVICE_ID"){
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        to_email: emailAssociadoReal,
-        codigo: codigo,
-        empresa: empresaEncontrada,
-      });
-    } else {
-      console.warn("EmailJS não configurado ainda — o código não foi enviado de verdade. Código gerado (só aparece no console, pra teste):", codigo);
-    }
+    if(!window.emailjs) throw new Error("O serviço de e-mail não foi carregado.");
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: emailAssociadoReal,
+      codigo,
+      empresa: empresaEncontrada || "Empresa associada",
+    });
 
     codigoVerificacaoEnviado = true;
+    codigoEnviadoEm = Date.now();
+    tentativasCodigo = 0;
     document.getElementById("emailVerifyStep1").style.display = "none";
     document.getElementById("emailVerifyStep2").style.display = "block";
   }catch(e){
@@ -1769,7 +1777,10 @@ async function verificarCodigo(evt){
   const codigo = onlyDigits(document.getElementById("codigoVerificacao").value);
   const cnpjDigits = onlyDigits(document.getElementById("cnpj").value);
   const errorEl = document.querySelector("#emailVerifyStep2 .field-error");
+  if(!codigoVerificacaoEnviado){ errorEl.textContent="Solicite um código antes de continuar.";errorEl.style.display="block";return; }
+  if(tentativasCodigo>=5){ errorEl.textContent="Limite de tentativas atingido. Solicite um novo código.";errorEl.style.display="block";return; }
   if(codigo.length !== 6){ errorEl.style.display = "block"; return; }
+  tentativasCodigo++;
 
   const btn = evt ? evt.target : null;
   if(btn){ btn.disabled = true; btn.textContent = "Verificando..."; }
@@ -1787,10 +1798,12 @@ async function verificarCodigo(evt){
       .select();
 
     if(error || !data || data.length === 0){
+      errorEl.textContent=tentativasCodigo>=5?"Limite de tentativas atingido. Solicite um novo código.":`Código incorreto ou expirado. Restam ${5-tentativasCodigo} tentativa(s).`;
       errorEl.style.display = "block";
       if(btn){ btn.disabled = false; btn.textContent = "Verificar e continuar"; }
       return;
     }
+    tentativasCodigo=0;
     errorEl.style.display = "none";
     next();
   }catch(e){
