@@ -203,6 +203,8 @@ function onlyDigits(v){ return (v||'').replace(/\D/g,''); }
 
 const params = new URLSearchParams(location.search);
 const CLIENT_NUMERO = params.get('c') || params.get('id'); // aceita "c" (novo) e "id" (links antigos)
+const EMPRESA_CODIGO = params.get('e');
+const VIDA_CODIGO = params.get('v');
 let DB = null;
 let CLIENT = null;
 let STEPS = [];
@@ -211,8 +213,9 @@ const ANSWERS = {}; // ANSWERS[personKey] = {...}
 let ENDERECO = {};
 
 function listPessoasPublico(c){
-  return [{ key:'titular', label: c.titular.nome||'Titular', tipo:'Titular', pessoa:c.titular }]
+  const todas=[{ key:'titular', label: c.titular.nome||'Titular', tipo:'Titular', pessoa:c.titular }]
     .concat(c.dependentes.map((d,i)=>({ key:'dep'+i, label: d.nome||('Dependente '+(i+1)), tipo:(i+1)+'º Dependente', pessoa:d })));
+  return VIDA_CODIGO ? todas.filter(p=>p.pessoa.codigoVida===VIDA_CODIGO) : todas;
 }
 
 async function boot(){
@@ -230,7 +233,12 @@ async function boot(){
       showError('Cadastro não encontrado', 'Não localizamos seus dados. Fale com a CDL Mossoró para receber um novo link.');
       return;
     }
+    if(EMPRESA_CODIGO){
+      const empresa=(DB.empresas||[]).find(e=>e.id===CLIENT.empresaId);
+      if(!empresa || empresa.codigoEmpresa!==EMPRESA_CODIGO){ showError('Link inválido','O código da empresa não corresponde a este cadastro. Peça um novo link à CDL Mossoró.'); return; }
+    }
     const pessoas = listPessoasPublico(CLIENT);
+    if(!pessoas.length){ showError('Vida não encontrada','O código individual desta vida não foi localizado. Peça um novo link à CDL Mossoró.'); return; }
     STEPS = ['intro','endereco', ...pessoas.map(p=>'pessoa:'+p.key)];
     document.getElementById('heroSub').textContent = CLIENT.titular.razaoSocial || 'CDL Mossoró × Unimed';
     renderStep();
