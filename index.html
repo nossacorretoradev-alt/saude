@@ -1086,34 +1086,35 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <!-- SIGNATURE -->
       <div class="q-step" id="step-signature">
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></span><div class="q-eyebrow">Assinatura digital</div></div>
-        <h2 class="q-title">Assine para concluir sua adesão</h2>
-        <p class="q-sub">Desenhe sua assinatura no campo abaixo com o dedo ou o mouse.</p>
+        <h2 class="q-title">Assine seu contrato com segurança</h2>
+        <p class="q-sub">A assinatura será feita no ambiente seguro da ZapSign e abrirá em uma nova aba.</p>
 
         <div id="signPadArea">
-          <div class="sign-pad-wrap">
+          <div class="sign-pad-wrap" style="display:none" aria-hidden="true">
             <canvas id="signPad"></canvas>
             <div class="sign-pad-hint" id="signHint">assine aqui</div>
           </div>
-          <div class="sign-actions">
+          <div class="sign-actions" style="display:none">
             <button type="button" class="btn btn-ghost btn-sm" onclick="clearSignature()">Limpar</button>
           </div>
-          <div class="field-error" id="signError">Desenhe sua assinatura antes de continuar.</div>
+          <div class="field-error" id="signError">Não foi possível iniciar a assinatura. Tente novamente.</div>
           <div class="q-actions">
             <button class="btn btn-ghost" onclick="prev()">Voltar</button>
-            <button class="btn btn-primary" onclick="confirmSignature()">Confirmar assinatura</button>
+            <button class="btn btn-primary" id="startZapSignBtn" onclick="confirmSignature(event)">Abrir assinatura ZapSign</button>
           </div>
         </div>
 
         <div id="signConfirmed" class="signed-confirm" style="display:none">
-          <div class="success-icon">✓</div>
-          <h3 style="font-size:17px;">Contrato assinado</h3>
-          <img id="signedImg" alt="Assinatura">
-          <p class="ts" id="signedTs"></p>
+          <div class="success-icon" id="zapSignStatusIcon">↗</div>
+          <h3 style="font-size:17px;" id="zapSignStatusTitle">Documento enviado para assinatura</h3>
+          <img id="signedImg" alt="" style="display:none">
+          <p class="ts" id="signedTs">Conclua a assinatura na aba da ZapSign e volte aqui.</p>
           <div class="q-actions">
-            <a id="downloadSignedPdfBtn" class="btn btn-ghost btn-block" href="#" download>Baixar contrato assinado (PDF)</a>
+            <a id="downloadSignedPdfBtn" class="btn btn-ghost btn-block" href="#" target="_blank" rel="noopener">Voltar para a assinatura</a>
           </div>
           <div class="q-actions">
-            <button class="btn btn-primary btn-block" onclick="next()">Continuar para verificação de identidade</button>
+            <button class="btn btn-primary btn-block" id="verifyZapSignBtn" onclick="verifyZapSign(event)">Já assinei — verificar</button>
+            <button class="btn btn-primary btn-block" id="continueAfterZapSignBtn" style="display:none" onclick="next()">Continuar para verificação de identidade</button>
           </div>
         </div>
       </div>
@@ -1526,6 +1527,7 @@ let empresaEncontrada = "";
 let emailAssociadoReal = "";
 let codigoVerificacaoEnviado = false;
 let signatureDataUrl = null;
+let zapsignSignature = null;
 
 function onlyDigits(v){ return v.replace(/\D/g,""); }
 function maskCnpj(v){
@@ -2173,41 +2175,80 @@ function clearSignature(){
   document.getElementById("signError").style.display = "none";
 }
 
-function confirmSignature(){
-  if(!hasSigned){
-    document.getElementById("signError").style.display = "block";
-    return;
+async function confirmSignature(evt){
+  const btn = evt?.currentTarget || document.getElementById("startZapSignBtn");
+  const errorBox = document.getElementById("signError");
+  errorBox.style.display = "none";
+  if(btn){ btn.disabled = true; btn.textContent = "Preparando contrato..."; }
+  try{
+    const contato = getNomeEmailAtual();
+    const { doc } = buildContractPDF();
+    const pdfBase64 = doc.output("datauristring").split(",")[1];
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/zapsign-create`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: document.getElementById("diretorResponsavel").value || contato.nome,
+        email: document.getElementById("emailDiretor").value || contato.email,
+        celular: getCelularAtual(),
+        cpf: document.getElementById("cpfDiretor").value || "",
+        tituloDocumento: `Ficha de Adesão CDL Mossoró — ${contato.empresa || contato.nome}`,
+        pdfBase64
+      })
+    });
+    const data = await response.json();
+    if(!response.ok || !data.docToken || !data.signUrl) throw new Error(data.error || "A ZapSign não devolveu o link de assinatura.");
+    zapsignSignature = { docToken:data.docToken, signerToken:data.signerToken, signUrl:data.signUrl, status:data.status, completed:false };
+    document.getElementById("signPadArea").style.display = "none";
+    document.getElementById("signConfirmed").style.display = "block";
+    document.getElementById("downloadSignedPdfBtn").href = data.signUrl;
+    window.open(data.signUrl, "_blank", "noopener");
+  }catch(error){
+    console.error("ZapSign create", error);
+    errorBox.textContent = error.message || "Não foi possível iniciar a assinatura.";
+    errorBox.style.display = "block";
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "Abrir assinatura ZapSign"; }
   }
-  signatureDataUrl = canvas.toDataURL("image/png");
-  document.getElementById("signPadArea").style.display = "none";
-  document.getElementById("signConfirmed").style.display = "block";
-  document.getElementById("signedImg").src = signatureDataUrl;
-  const now = new Date();
-  const signedAtStr = now.toLocaleDateString("pt-BR") + " às " + now.toLocaleTimeString("pt-BR").slice(0,5);
-  signedAtGlobal = signedAtStr;
+}
 
-  // Carimbo de evidências da assinatura eletrônica avançada (Lei 14.063/2020, art. 4º, II):
-  // hash do documento + timestamp + CPF do signatário + dados do dispositivo, tudo embutido
-  // no PDF final — reforça a validade jurídica sem depender de nenhum sistema externo.
-  signatureAudit = {
-    cpf: document.getElementById("cpfDiretor").value || "",
-    nome: document.getElementById("diretorResponsavel").value || "",
-    dataHoraISO: now.toISOString(),
-    fusoHorario: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-    userAgent: navigator.userAgent,
-    idioma: navigator.language,
-  };
-
-  document.getElementById("signedTs").textContent =
-    "Assinado eletronicamente em " + signedAtStr +
-    " · " + (document.getElementById("diretorResponsavel").value || "");
-
-  // Regera o PDF do contrato, agora com a assinatura desenhada + carimbo de evidências, e libera o download
-  const { blobUrl, filename } = buildContractPDF(signatureDataUrl, signedAtStr);
-  signedContractBlobUrl = blobUrl;
-  const dlBtn = document.getElementById("downloadSignedPdfBtn");
-  dlBtn.href = blobUrl;
-  dlBtn.setAttribute("download", filename);
+async function verifyZapSign(evt){
+  if(!zapsignSignature?.docToken) return;
+  const btn = evt?.currentTarget || document.getElementById("verifyZapSignBtn");
+  btn.disabled = true;
+  btn.textContent = "Verificando...";
+  try{
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/zapsign-status`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ docToken:zapsignSignature.docToken })
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || "Não foi possível consultar a assinatura.");
+    zapsignSignature = Object.assign(zapsignSignature, data);
+    if(!data.completed){
+      document.getElementById("signedTs").textContent = "A assinatura ainda não foi concluída. Finalize na ZapSign e tente novamente.";
+      return;
+    }
+    signatureDataUrl = "zapsign-confirmed";
+    signedAtGlobal = data.signers?.[0]?.signedAt || new Date().toISOString();
+    document.getElementById("zapSignStatusIcon").textContent = "✓";
+    document.getElementById("zapSignStatusTitle").textContent = "Contrato assinado e confirmado";
+    document.getElementById("signedTs").textContent = "A ZapSign confirmou a assinatura com sucesso.";
+    if(data.signedFile){
+      const link = document.getElementById("downloadSignedPdfBtn");
+      link.href = data.signedFile;
+      link.textContent = "Baixar contrato assinado (PDF)";
+    }
+    btn.style.display = "none";
+    document.getElementById("continueAfterZapSignBtn").style.display = "block";
+  }catch(error){
+    console.error("ZapSign status", error);
+    document.getElementById("signedTs").textContent = error.message || "Falha ao consultar a assinatura.";
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Já assinei — verificar";
+  }
 }
 
 // inicializa o canvas assim que a etapa de assinatura for exibida pela 1ª vez
@@ -2512,7 +2553,7 @@ async function finalizarAdesao(evt){
   // Gera o PDF INTERNO (contrato + assinatura + carimbo de evidências) e envia só para o
   // Storage privado do Supabase — esse arquivo nunca é mostrado nem baixado pelo cliente.
   let internalPdfPath = null;
-  if(!isAssociado && signatureDataUrl){
+  if(!isAssociado && signatureDataUrl && !zapsignSignature?.completed){
     try{
       const { doc: internalDoc, filename: internalFilename } = buildContractPDF(signatureDataUrl, signedAtGlobal);
       const pdfBlob = internalDoc.output("blob");
@@ -2549,8 +2590,17 @@ async function finalizarAdesao(evt){
     empresa: contato.empresa,
     nome: contato.nome,
     email: contato.email,
-    contrato_assinado: !!signatureDataUrl,
-    assinatura_base64: signatureDataUrl,
+    contrato_assinado: !!zapsignSignature?.completed,
+    assinatura_base64: null,
+    zapsign: zapsignSignature ? {
+      doc_token: zapsignSignature.docToken,
+      signer_token: zapsignSignature.signerToken,
+      sign_url: zapsignSignature.signUrl,
+      status: zapsignSignature.status,
+      completed: !!zapsignSignature.completed,
+      signed_file: zapsignSignature.signedFile || null,
+      signed_at: zapsignSignature.signers?.[0]?.signedAt || null
+    } : null,
     fatura_path: faturaPath,
     internal_pdf_path: internalPdfPath, // contrato + carimbo de evidências — só acessível pelo painel do Supabase
     orcamento_path: orcamentoPdfPath, // cópia do orçamento em PDF que o cliente baixou
