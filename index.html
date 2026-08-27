@@ -1012,7 +1012,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div class="field">
           <label for="enderecoRua">Endereço</label>
-          <input type="text" id="enderecoRua" placeholder="Rua, número, complemento">
+          <input type="text" id="enderecoRua" placeholder="Rua, avenida ou logradouro">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="enderecoNumero">Número</label>
+            <input type="text" id="enderecoNumero" placeholder="Ex.: 125 ou S/N">
+          </div>
+          <div class="field">
+            <label for="enderecoComplemento">Complemento <span class="opt">(opcional)</span></label>
+            <input type="text" id="enderecoComplemento" placeholder="Sala, bloco, loja, andar...">
+          </div>
         </div>
         <div class="field-row">
           <div class="field">
@@ -1022,6 +1032,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div class="field">
             <label for="cidade">Cidade</label>
             <input type="text" id="cidade" value="Mossoró" placeholder="Cidade">
+          </div>
+          <div class="field">
+            <label for="uf">UF</label>
+            <input type="text" id="uf" value="RN" maxlength="2" placeholder="RN" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)">
           </div>
         </div>
 
@@ -1087,7 +1101,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="q-step" id="step-signature">
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg></span><div class="q-eyebrow">Assinatura digital</div></div>
         <h2 class="q-title">Assine seu contrato com segurança</h2>
-        <p class="q-sub">A assinatura será feita no ambiente seguro da ZapSign e abrirá em uma nova aba.</p>
+        <p class="q-sub">A assinatura será feita no ambiente seguro da Autentique e abrirá em uma nova aba.</p>
 
         <div id="signPadArea">
           <div class="sign-pad-wrap" style="display:none" aria-hidden="true">
@@ -1100,21 +1114,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <div class="field-error" id="signError">Não foi possível iniciar a assinatura. Tente novamente.</div>
           <div class="q-actions">
             <button class="btn btn-ghost" onclick="prev()">Voltar</button>
-            <button class="btn btn-primary" id="startZapSignBtn" onclick="confirmSignature(event)">Abrir assinatura ZapSign</button>
+            <button class="btn btn-primary" id="startAutentiqueBtn" onclick="confirmSignature(event)">Abrir assinatura Autentique</button>
           </div>
         </div>
 
         <div id="signConfirmed" class="signed-confirm" style="display:none">
-          <div class="success-icon" id="zapSignStatusIcon">↗</div>
-          <h3 style="font-size:17px;" id="zapSignStatusTitle">Documento enviado para assinatura</h3>
+          <div class="success-icon" id="autentiqueStatusIcon">↗</div>
+          <h3 style="font-size:17px;" id="autentiqueStatusTitle">Documento enviado para assinatura</h3>
           <img id="signedImg" alt="" style="display:none">
-          <p class="ts" id="signedTs">Conclua a assinatura na aba da ZapSign e volte aqui.</p>
+          <p class="ts" id="signedTs">Conclua a assinatura na aba da Autentique e volte aqui.</p>
           <div class="q-actions">
             <a id="downloadSignedPdfBtn" class="btn btn-ghost btn-block" href="#" target="_blank" rel="noopener">Voltar para a assinatura</a>
           </div>
           <div class="q-actions">
-            <button class="btn btn-primary btn-block" id="verifyZapSignBtn" onclick="verifyZapSign(event)">Já assinei — verificar</button>
-            <button class="btn btn-primary btn-block" id="continueAfterZapSignBtn" style="display:none" onclick="next()">Continuar para verificação de identidade</button>
+            <button class="btn btn-primary btn-block" id="verifyAutentiqueBtn" onclick="verifyAutentique(event)">Já assinei — verificar</button>
+            <button class="btn btn-primary btn-block" id="continueAfterAutentiqueBtn" style="display:none" onclick="next()">Continuar para verificação de identidade</button>
           </div>
         </div>
       </div>
@@ -1525,11 +1539,12 @@ let SKIP_INITIAL_SCROLL = true;
 let isAssociado = null;
 let empresaEncontrada = "";
 let emailAssociadoReal = "";
+let dadosCnpjConsultado = null;
 let codigoVerificacaoEnviado = false;
 let codigoEnviadoEm = 0;
 let tentativasCodigo = 0;
 let signatureDataUrl = null;
-let zapsignSignature = null;
+let autentiqueSignature = null;
 
 function onlyDigits(v){ return v.replace(/\D/g,""); }
 function maskCnpj(v){
@@ -1609,12 +1624,15 @@ async function lookupCep(cepDigits){
       return;
     }
     const ruaEl = document.getElementById("enderecoRua");
+    const complementoEl = document.getElementById("enderecoComplemento");
     const bairroEl = document.getElementById("bairro");
     const cidadeEl = document.getElementById("cidade");
-    const ruaBase = [data.logradouro, data.complemento].filter(Boolean).join(", ");
-    ruaEl.value = ruaBase;
+    const ufEl = document.getElementById("uf");
+    ruaEl.value = data.logradouro || "";
+    if(!complementoEl.value) complementoEl.value = data.complemento || "";
     bairroEl.value = data.bairro || "";
     cidadeEl.value = data.localidade || cidadeEl.value;
+    ufEl.value = data.uf || ufEl.value;
     statusEl.className = "field-hint ok";
     statusEl.textContent = "Endereço preenchido automaticamente — confira o número.";
   }catch(e){
@@ -1706,6 +1724,21 @@ async function validateCnpjStep(evt){
     emailAssociadoReal = "";
   }
 
+  // Para CNPJ novo, busca os dados públicos da Receita via BrasilAPI e deixa
+  // tudo preenchido e editável na ficha de adesão.
+  if(!isAssociado){
+    dadosCnpjConsultado = null;
+    try{
+      const cadastroResp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`);
+      if(cadastroResp.ok){
+        dadosCnpjConsultado = await cadastroResp.json();
+        preencherFichaComDadosCnpj(dadosCnpjConsultado);
+      }
+    }catch(e){
+      console.warn("Não foi possível preencher o CNPJ automaticamente; a ficha continuará manual.", e);
+    }
+  }
+
   if(btn){ btn.disabled = false; btn.textContent = "Continuar"; }
 
   if(isAssociado){
@@ -1723,6 +1756,22 @@ async function validateCnpjStep(evt){
   }
   idx = 2; // "statusOk" ou "statusWarn" — sempre a 3ª posição (intro, cnpj, status...)
   showStepId(flow[idx]);
+}
+
+function preencherFichaComDadosCnpj(data){
+  const set=(id,value,transform)=>{const el=document.getElementById(id);if(el&&value!==null&&value!==undefined&&String(value).trim())el.value=transform?transform(String(value)):String(value);};
+  set('razaoSocial',data.razao_social);
+  set('nomeFantasia',data.nome_fantasia);
+  set('ramoAtividade',data.cnae_fiscal_descricao);
+  set('cep',data.cep,maskCep);
+  set('enderecoRua',data.logradouro);
+  set('enderecoNumero',data.numero);
+  set('enderecoComplemento',data.complemento);
+  set('bairro',data.bairro);
+  set('cidade',data.municipio);
+  set('uf',data.uf,v=>v.toUpperCase().slice(0,2));
+  set('telFixo',data.ddd_telefone_1,maskPhone);
+  set('emailFinanceiro',data.email,v=>v.toLowerCase());
 }
 
 /* ===== VERIFICAÇÃO POR CÓDIGO DE E-MAIL (associados) =====
@@ -1847,7 +1896,7 @@ function validatePlanoCDLStep(){
 }
 
 function validateContractForm(){
-  const required = ["razaoSocial","ramoAtividade","diretorResponsavel","cpfDiretor","enderecoRua","bairro","cidade","cep","emailDiretor"];
+  const required = ["razaoSocial","ramoAtividade","diretorResponsavel","cpfDiretor","enderecoRua","enderecoNumero","bairro","cidade","uf","cep","emailDiretor"];
   let ok = true;
   required.forEach(id=>{
     const el = document.getElementById(id);
@@ -1889,8 +1938,11 @@ function buildContractHTML(){
     ["Data de Aniversário", v('dataAniversario')],
     ["CPF", v('cpfDiretor')],
     ["Endereço", v('enderecoRua')],
+    ["Número", v('enderecoNumero')],
+    ["Complemento", v('enderecoComplemento')],
     ["Bairro", v('bairro')],
     ["Cidade", v('cidade')],
+    ["UF", v('uf')],
     ["CEP", v('cep')],
     ["Telefone Fixo", v('telFixo')],
     ["Celular", celular],
@@ -2027,8 +2079,11 @@ function buildContractPDF(signatureDataUrl, signedAt){
     ["Data de Aniversário", v('dataAniversario')],
     ["CPF", v('cpfDiretor')],
     ["Endereço", v('enderecoRua')],
+    ["Número", v('enderecoNumero')],
+    ["Complemento", v('enderecoComplemento')],
     ["Bairro", v('bairro')],
     ["Cidade", v('cidade')],
+    ["UF", v('uf')],
     ["CEP", v('cep')],
     ["Telefone Fixo", v('telFixo')],
     ["Celular", celular],
@@ -2189,7 +2244,7 @@ function clearSignature(){
 }
 
 async function confirmSignature(evt){
-  const btn = evt?.currentTarget || document.getElementById("startZapSignBtn");
+  const btn = evt?.currentTarget || document.getElementById("startAutentiqueBtn");
   const errorBox = document.getElementById("signError");
   errorBox.style.display = "none";
   if(btn){ btn.disabled = true; btn.textContent = "Preparando contrato..."; }
@@ -2197,7 +2252,7 @@ async function confirmSignature(evt){
     const contato = getNomeEmailAtual();
     const { doc } = buildContractPDF();
     const pdfBase64 = doc.output("datauristring").split(",")[1];
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/zapsign-create`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/autentique-create`, {
       method: "POST",
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2210,53 +2265,53 @@ async function confirmSignature(evt){
       })
     });
     const data = await response.json();
-    if(!response.ok || !data.docToken || !data.signUrl) throw new Error(data.error || "A ZapSign não devolveu o link de assinatura.");
-    zapsignSignature = { docToken:data.docToken, signerToken:data.signerToken, signUrl:data.signUrl, status:data.status, completed:false };
+    if(!response.ok || !data.documentId || !data.signUrl) throw new Error(data.error || "A Autentique não devolveu o link de assinatura.");
+    autentiqueSignature = { documentId:data.documentId, signatureId:data.signatureId, signUrl:data.signUrl, status:data.status, completed:false };
     document.getElementById("signPadArea").style.display = "none";
     document.getElementById("signConfirmed").style.display = "block";
     document.getElementById("downloadSignedPdfBtn").href = data.signUrl;
     window.open(data.signUrl, "_blank", "noopener");
   }catch(error){
-    console.error("ZapSign create", error);
+    console.error("Autentique create", error);
     errorBox.textContent = error.message || "Não foi possível iniciar a assinatura.";
     errorBox.style.display = "block";
   }finally{
-    if(btn){ btn.disabled = false; btn.textContent = "Abrir assinatura ZapSign"; }
+    if(btn){ btn.disabled = false; btn.textContent = "Abrir assinatura Autentique"; }
   }
 }
 
-async function verifyZapSign(evt){
-  if(!zapsignSignature?.docToken) return;
-  const btn = evt?.currentTarget || document.getElementById("verifyZapSignBtn");
+async function verifyAutentique(evt){
+  if(!autentiqueSignature?.documentId) return;
+  const btn = evt?.currentTarget || document.getElementById("verifyAutentiqueBtn");
   btn.disabled = true;
   btn.textContent = "Verificando...";
   try{
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/zapsign-status`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/autentique-status`, {
       method: "POST",
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ docToken:zapsignSignature.docToken })
+      body: JSON.stringify({ documentId:autentiqueSignature.documentId })
     });
     const data = await response.json();
     if(!response.ok) throw new Error(data.error || "Não foi possível consultar a assinatura.");
-    zapsignSignature = Object.assign(zapsignSignature, data);
+    autentiqueSignature = Object.assign(autentiqueSignature, data);
     if(!data.completed){
-      document.getElementById("signedTs").textContent = "A assinatura ainda não foi concluída. Finalize na ZapSign e tente novamente.";
+      document.getElementById("signedTs").textContent = "A assinatura ainda não foi concluída. Finalize na Autentique e tente novamente.";
       return;
     }
-    signatureDataUrl = "zapsign-confirmed";
+    signatureDataUrl = "autentique-confirmed";
     signedAtGlobal = data.signers?.[0]?.signedAt || new Date().toISOString();
-    document.getElementById("zapSignStatusIcon").textContent = "✓";
-    document.getElementById("zapSignStatusTitle").textContent = "Contrato assinado e confirmado";
-    document.getElementById("signedTs").textContent = "A ZapSign confirmou a assinatura com sucesso.";
+    document.getElementById("autentiqueStatusIcon").textContent = "✓";
+    document.getElementById("autentiqueStatusTitle").textContent = "Contrato assinado e confirmado";
+    document.getElementById("signedTs").textContent = "A Autentique confirmou a assinatura com sucesso.";
     if(data.signedFile){
       const link = document.getElementById("downloadSignedPdfBtn");
       link.href = data.signedFile;
       link.textContent = "Baixar contrato assinado (PDF)";
     }
     btn.style.display = "none";
-    document.getElementById("continueAfterZapSignBtn").style.display = "block";
+    document.getElementById("continueAfterAutentiqueBtn").style.display = "block";
   }catch(error){
-    console.error("ZapSign status", error);
+    console.error("Autentique status", error);
     document.getElementById("signedTs").textContent = error.message || "Falha ao consultar a assinatura.";
   }finally{
     btn.disabled = false;
@@ -2566,7 +2621,7 @@ async function finalizarAdesao(evt){
   // Gera o PDF INTERNO (contrato + assinatura + carimbo de evidências) e envia só para o
   // Storage privado do Supabase — esse arquivo nunca é mostrado nem baixado pelo cliente.
   let internalPdfPath = null;
-  if(!isAssociado && signatureDataUrl && !zapsignSignature?.completed){
+  if(!isAssociado && signatureDataUrl && !autentiqueSignature?.completed){
     try{
       const { doc: internalDoc, filename: internalFilename } = buildContractPDF(signatureDataUrl, signedAtGlobal);
       const pdfBlob = internalDoc.output("blob");
@@ -2603,16 +2658,17 @@ async function finalizarAdesao(evt){
     empresa: contato.empresa,
     nome: contato.nome,
     email: contato.email,
-    contrato_assinado: !!zapsignSignature?.completed,
+    contrato_assinado: !!autentiqueSignature?.completed,
     assinatura_base64: null,
-    zapsign: zapsignSignature ? {
-      doc_token: zapsignSignature.docToken,
-      signer_token: zapsignSignature.signerToken,
-      sign_url: zapsignSignature.signUrl,
-      status: zapsignSignature.status,
-      completed: !!zapsignSignature.completed,
-      signed_file: zapsignSignature.signedFile || null,
-      signed_at: zapsignSignature.signers?.[0]?.signedAt || null
+    assinatura_digital: autentiqueSignature ? {
+      provider: "autentique",
+      document_id: autentiqueSignature.documentId,
+      signature_id: autentiqueSignature.signatureId,
+      sign_url: autentiqueSignature.signUrl,
+      status: autentiqueSignature.status,
+      completed: !!autentiqueSignature.completed,
+      signed_file: autentiqueSignature.signedFile || null,
+      signed_at: autentiqueSignature.signers?.[0]?.signedAt || null
     } : null,
     fatura_path: faturaPath,
     internal_pdf_path: internalPdfPath, // contrato + carimbo de evidências — só acessível pelo painel do Supabase
