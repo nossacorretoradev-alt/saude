@@ -2645,8 +2645,9 @@ async function confirmSignature(evt) {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/autentique-create`, {
       method: 'POST',
       headers: {
+        // Chave nova do Supabase (sb_publishable_) não é JWT — não mandar no
+        // Authorization, só no apikey, senão o Supabase rejeita com 401.
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -2694,8 +2695,9 @@ async function verifyAutentique(evt) {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/autentique-status`, {
       method: 'POST',
       headers: {
+        // Chave nova do Supabase (sb_publishable_) não é JWT — não mandar no
+        // Authorization, só no apikey, senão o Supabase rejeita com 401.
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
