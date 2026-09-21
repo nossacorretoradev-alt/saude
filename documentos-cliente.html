@@ -26,16 +26,95 @@
 <main class="wrap"><div id="app" class="main-card"><div class="loading"><div class="spinner"></div><p>Carregando sua solicitação...</p></div></div></main>
 <footer class="site-footer"><div class="footer-inner"><div class="footer-grid"><div class="footer-col"><p style="font-weight:800;font-size:15px;color:#fff;margin-bottom:8px">Nossa Corretora de Seguros</p><p>20 anos protegendo você.<br>Sede em Mossoró (RN), atuação em todo o Brasil.</p></div><div class="footer-col"><h5>Contato</h5><a href="https://api.whatsapp.com/send?phone=558433158888" target="_blank" rel="noopener">WhatsApp (84) 3315-8888</a><a href="index.html">Simular meu plano</a></div><div class="footer-col"><h5>Parceria</h5><p>Simulador desenvolvido em parceria entre a CDL Mossoró e a Unimed, para associados e empresas de Mossoró e região.</p></div><div class="footer-col"><h5>Legal</h5><a href="termos-de-uso.html">Termos de Uso e Participação</a></div></div><div class="footer-bottom">© <span id="footerYear"></span> Nossa Corretora de Seguros — Filiada Lojacorr. Todos os direitos reservados.</div></div></footer>
 <script>
-const SUPABASE_URL='https://ucqmgvmnqcbbboryuevn.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_8mxIm8xrMLcIICWXGxtFSA_sancrabI';
-const ENDPOINT=SUPABASE_URL+'/functions/v1/document-uploads';
-const TOKEN=new URLSearchParams(location.search).get('token')||'';
-document.getElementById('footerYear').textContent=new Date().getFullYear();
-let STATE=null;
-const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function api(body){const r=await fetch(ENDPOINT,{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha na solicitação.');return d}
-async function load(){try{if(!TOKEN)throw new Error('O link está incompleto. Abra o endereço recebido pelo seu atendente.');STATE=await api({action:'public-get',token:TOKEN});render()}catch(e){document.getElementById('app').innerHTML=`<div class="error-box"><h2>Não foi possível abrir</h2><p>${esc(e.message)}</p></div>`}}
-function render(){const uploads=new Map((STATE.uploads||[]).map(x=>[x.item_key,x]));const groups={};(STATE.request.requested_items||[]).forEach(i=>(groups[i.group]||(groups[i.group]=[])).push(i));document.getElementById('app').innerHTML=`<section class="welcome"><div class="welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></div><div><h2>Olá, ${esc(STATE.request.holder_name)}</h2><p>Anexe cada documento no campo correspondente. Aceitamos PDF, JPG, PNG ou WEBP, com até 10 MB por arquivo.</p><span class="expiry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Link válido até ${new Date(STATE.request.expires_at).toLocaleDateString('pt-BR')}</span></div></section>${Object.entries(groups).map(([g,items])=>`<section class="group"><h3 class="group-title">${esc(g)}</h3>${items.map(i=>{const u=uploads.get(i.key),rejected=u?.status==='rejected';return `<div class="doc-item ${u&&!rejected?'sent':''} ${rejected?'rejected':''}" id="card-${esc(i.key)}"><div class="row"><span class="doc-icon">${u&&!rejected?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'}</span><div class="info"><div class="label">${esc(i.label)}</div><div class="status">${rejected?'Envio recusado: '+esc(u.rejection_reason||'envie novamente'):u?'✓ Recebido em '+new Date(u.uploaded_at).toLocaleString('pt-BR'):'Aguardando envio'}</div></div><label class="pick">${u&&!rejected?'Substituir':'Escolher arquivo'}<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onchange="uploadFile('${esc(i.key)}',this)"></label></div><div class="bar"><span></span></div></div>`}).join('')}</section>`).join('')}<div class="foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg> Seus documentos são enviados por uma conexão segura. Se tiver dificuldade, fale com o responsável pela implantação.</div>`}
-async function uploadFile(itemKey,input){const file=input.files?.[0];if(!file)return;if(file.size>10*1024*1024){alert('O arquivo deve ter no máximo 10 MB.');input.value='';return}const card=document.getElementById('card-'+itemKey),bar=card.querySelector('.bar span'),label=card.querySelector('.pick');label.textContent='Enviando…';bar.style.width='45%';try{const f=new FormData();f.append('token',TOKEN);f.append('itemKey',itemKey);f.append('file',file);const r=await fetch(ENDPOINT,{method:'POST',headers:{apikey:SUPABASE_ANON_KEY},body:f});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha no envio.');bar.style.width='100%';STATE=await api({action:'public-get',token:TOKEN});setTimeout(render,350)}catch(e){bar.style.width='0';alert(e.message);render()}}
+const SUPABASE_URL = 'https://ucqmgvmnqcbbboryuevn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_8mxIm8xrMLcIICWXGxtFSA_sancrabI';
+const ENDPOINT = SUPABASE_URL + '/functions/v1/document-uploads';
+const TOKEN = new URLSearchParams(location.search).get('token') || '';
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+let STATE = null;
+const esc = (s) =>
+  String(s || '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  );
+async function api(body) {
+  const r = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Falha na solicitação.');
+  return d;
+}
+async function load() {
+  try {
+    if (!TOKEN)
+      throw new Error('O link está incompleto. Abra o endereço recebido pelo seu atendente.');
+    STATE = await api({ action: 'public-get', token: TOKEN });
+    render();
+  } catch (e) {
+    document.getElementById('app').innerHTML =
+      `<div class="error-box"><h2>Não foi possível abrir</h2><p>${esc(e.message)}</p></div>`;
+  }
+}
+function render() {
+  const uploads = new Map((STATE.uploads || []).map((x) => [x.item_key, x]));
+  const groups = {};
+  (STATE.request.requested_items || []).forEach((i) =>
+    (groups[i.group] || (groups[i.group] = [])).push(i)
+  );
+  document.getElementById('app').innerHTML =
+    `<section class="welcome"><div class="welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></div><div><h2>Olá, ${esc(STATE.request.holder_name)}</h2><p>Anexe cada documento no campo correspondente. Aceitamos PDF, JPG, PNG ou WEBP, com até 10 MB por arquivo.</p><span class="expiry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Link válido até ${new Date(STATE.request.expires_at).toLocaleDateString('pt-BR')}</span></div></section>${Object.entries(
+      groups
+    )
+      .map(
+        ([g, items]) =>
+          `<section class="group"><h3 class="group-title">${esc(g)}</h3>${items
+            .map((i) => {
+              const u = uploads.get(i.key),
+                rejected = u?.status === 'rejected';
+              return `<div class="doc-item ${u && !rejected ? 'sent' : ''} ${rejected ? 'rejected' : ''}" id="card-${esc(i.key)}"><div class="row"><span class="doc-icon">${u && !rejected ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'}</span><div class="info"><div class="label">${esc(i.label)}</div><div class="status">${rejected ? 'Envio recusado: ' + esc(u.rejection_reason || 'envie novamente') : u ? '✓ Recebido em ' + new Date(u.uploaded_at).toLocaleString('pt-BR') : 'Aguardando envio'}</div></div><label class="pick">${u && !rejected ? 'Substituir' : 'Escolher arquivo'}<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onchange="uploadFile('${esc(i.key)}',this)"></label></div><div class="bar"><span></span></div></div>`;
+            })
+            .join('')}</section>`
+      )
+      .join(
+        ''
+      )}<div class="foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg> Seus documentos são enviados por uma conexão segura. Se tiver dificuldade, fale com o responsável pela implantação.</div>`;
+}
+async function uploadFile(itemKey, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('O arquivo deve ter no máximo 10 MB.');
+    input.value = '';
+    return;
+  }
+  const card = document.getElementById('card-' + itemKey),
+    bar = card.querySelector('.bar span'),
+    label = card.querySelector('.pick');
+  label.textContent = 'Enviando…';
+  bar.style.width = '45%';
+  try {
+    const f = new FormData();
+    f.append('token', TOKEN);
+    f.append('itemKey', itemKey);
+    f.append('file', file);
+    const r = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY },
+      body: f,
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Falha no envio.');
+    bar.style.width = '100%';
+    STATE = await api({ action: 'public-get', token: TOKEN });
+    setTimeout(render, 350);
+  } catch (e) {
+    bar.style.width = '0';
+    alert(e.message);
+    render();
+  }
+}
 load();
 </script></body></html>
