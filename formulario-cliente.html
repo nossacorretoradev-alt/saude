@@ -138,68 +138,79 @@ p.step-sub{ color:var(--gray); font-size:13px; margin:0 0 20px; line-height:1.55
 <div class="wrap" style="margin-top:0;" id="footnoteArea"></div>
 
 <script>
-const SUPABASE_URL = "https://ucqmgvmnqcbbboryuevn.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_8mxIm8xrMLcIICWXGxtFSA_sancrabI";
+const SUPABASE_URL = 'https://ucqmgvmnqcbbboryuevn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_8mxIm8xrMLcIICWXGxtFSA_sancrabI';
 const STORAGE_KEY = 'cdlunimed_portal_db_v1';
-function supabaseHeaders(extra){
-  return Object.assign({ apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, extra||{});
+function supabaseHeaders(extra) {
+  return Object.assign(
+    { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    extra || {}
+  );
 }
-async function storageGet(key){
+async function storageGet(key) {
   const url = `${SUPABASE_URL}/rest/v1/portal_storage?key=eq.${encodeURIComponent(key)}&select=value`;
   const res = await fetch(url, { headers: supabaseHeaders() });
-  if(!res.ok) throw new Error('Falha ao buscar dados: '+res.status);
+  if (!res.ok) throw new Error('Falha ao buscar dados: ' + res.status);
   const rows = await res.json();
-  if(!rows.length) throw new Error('not found');
+  if (!rows.length) throw new Error('not found');
   return rows[0].value;
 }
-async function storageSet(key, value){
+async function storageSet(key, value) {
   const url = `${SUPABASE_URL}/rest/v1/portal_storage`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: supabaseHeaders({ 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' }),
-    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+    headers: supabaseHeaders({
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    }),
+    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
   });
-  if(!res.ok) throw new Error('Falha ao salvar: '+res.status);
+  if (!res.ok) throw new Error('Falha ao salvar: ' + res.status);
 }
 
 const ICONS = {
-  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>`,
-  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  heart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>`,
-  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`,
-  clock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
-  lock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`,
+  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 000-7.8z"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+  lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`,
 };
 
 const DS_QUESTIONS = [
-  "Aparelho Cardiovascular (Angina, Infarto, Hipertensão, Doença Reumática e Chagas, outras Valvulopatias, Aneurismas); já foi submetido a algum tratamento?",
-  "Aparelho Digestivo (Vesícula, Fígado, Pâncreas, Esôfago, Intestino e Outros)?",
-  "Aparelho Genito-Urinário (Cálculos, Ureter, Bexiga, Próstata, Infecção Urinária e Outras)?",
-  "Aparelho Respiratório (Asma, Bronquite, Enfisema, Pneumonia, Tuberculose, e Outras)?",
-  "Problemas Gineco-Obstétricos (Infertilidade, Distúrbios Menstruais, Gravidez, Períneo, Mioma, Cistos de Ovários e Trompas, Complicações no Parto, Sangramento ou Endometriose)?",
-  "Doenças Oculares (Deficiência Visual, Astigmatismo, Miopia, Catarata, Glaucoma, Estrabismo e Outros)?",
-  "Distúrbios Mentais e do Comportamento (Nervosismo, Ansiedade, Depressão, Esquizofrenia, Neurose, Ingestão de Álcool ou Drogas, Outros)?",
-  "Doenças de veias e artérias (Varizes, Trombose, Aneurismas)?",
-  "Doenças dos órgãos genitais masculinos (Próstata, Hidroceles, Outros)?",
-  "Doenças endócrinas ou metabólicas (Diabetes, Tireoide, Supra-Renal, Hipófise e Outras)?",
-  "Doenças da mama (Cistos, Displasias, Outros)?",
-  "Doenças do sistema imune (Lúpus, Artrite Reumatoide, Outras)?",
-  "Doenças neurológicas (Derrame, Paralisia, Epilepsia, Desmaios, Parkinson, Outras)?",
-  "Hérnias de qualquer natureza (Inguinal, Umbilical, Outras)?",
-  "Problemas hematológicos (Anemia, Leucemia, Coagulopatias, Outras)?",
-  "Malformações congênitas ou adquiridas?",
-  "Doenças otorrinolaringológicas (Otite, Sinusite, Amigdalite, Rinite, Faringite, Vertigem, Outras)?",
-  "É portador ou tem sequela de alguma doença neoplásica (Câncer)? Já fez cirurgia, quimioterapia ou radioterapia?",
-  "Doenças do aparelho osteolocomotor (Hérnia de Disco, Escoliose, Artrite, Artrose, Joanete, Osteomielite, Outras)? Já necessitou de cirurgia ou fisioterapia?",
-  "É portador ou tem sequela de doença infectocontagiosa (AIDS ou outras DSTs, Hepatite, Tuberculose, Meningite, Outras)?",
-  "Tem algum tratamento clínico ou cirúrgico indicado e ainda não realizado?",
-  "Deficiência de órgãos, membros ou sentidos?",
-  "Teve alguma internação clínica ou fez alguma cirurgia nos últimos 12 meses? Qual motivo?",
-  "Teve algum acidente que tenha deixado alguma sequela ou necessite de algum tratamento médico?",
+  'Aparelho Cardiovascular (Angina, Infarto, Hipertensão, Doença Reumática e Chagas, outras Valvulopatias, Aneurismas); já foi submetido a algum tratamento?',
+  'Aparelho Digestivo (Vesícula, Fígado, Pâncreas, Esôfago, Intestino e Outros)?',
+  'Aparelho Genito-Urinário (Cálculos, Ureter, Bexiga, Próstata, Infecção Urinária e Outras)?',
+  'Aparelho Respiratório (Asma, Bronquite, Enfisema, Pneumonia, Tuberculose, e Outras)?',
+  'Problemas Gineco-Obstétricos (Infertilidade, Distúrbios Menstruais, Gravidez, Períneo, Mioma, Cistos de Ovários e Trompas, Complicações no Parto, Sangramento ou Endometriose)?',
+  'Doenças Oculares (Deficiência Visual, Astigmatismo, Miopia, Catarata, Glaucoma, Estrabismo e Outros)?',
+  'Distúrbios Mentais e do Comportamento (Nervosismo, Ansiedade, Depressão, Esquizofrenia, Neurose, Ingestão de Álcool ou Drogas, Outros)?',
+  'Doenças de veias e artérias (Varizes, Trombose, Aneurismas)?',
+  'Doenças dos órgãos genitais masculinos (Próstata, Hidroceles, Outros)?',
+  'Doenças endócrinas ou metabólicas (Diabetes, Tireoide, Supra-Renal, Hipófise e Outras)?',
+  'Doenças da mama (Cistos, Displasias, Outros)?',
+  'Doenças do sistema imune (Lúpus, Artrite Reumatoide, Outras)?',
+  'Doenças neurológicas (Derrame, Paralisia, Epilepsia, Desmaios, Parkinson, Outras)?',
+  'Hérnias de qualquer natureza (Inguinal, Umbilical, Outras)?',
+  'Problemas hematológicos (Anemia, Leucemia, Coagulopatias, Outras)?',
+  'Malformações congênitas ou adquiridas?',
+  'Doenças otorrinolaringológicas (Otite, Sinusite, Amigdalite, Rinite, Faringite, Vertigem, Outras)?',
+  'É portador ou tem sequela de alguma doença neoplásica (Câncer)? Já fez cirurgia, quimioterapia ou radioterapia?',
+  'Doenças do aparelho osteolocomotor (Hérnia de Disco, Escoliose, Artrite, Artrose, Joanete, Osteomielite, Outras)? Já necessitou de cirurgia ou fisioterapia?',
+  'É portador ou tem sequela de doença infectocontagiosa (AIDS ou outras DSTs, Hepatite, Tuberculose, Meningite, Outras)?',
+  'Tem algum tratamento clínico ou cirúrgico indicado e ainda não realizado?',
+  'Deficiência de órgãos, membros ou sentidos?',
+  'Teve alguma internação clínica ou fez alguma cirurgia nos últimos 12 meses? Qual motivo?',
+  'Teve algum acidente que tenha deixado alguma sequela ou necessite de algum tratamento médico?',
 ];
-const DS_FAMILY_QUESTIONS = ["História de câncer, hipertensão, infarto ou diabetes na família?", "História de alergias?"];
+const DS_FAMILY_QUESTIONS = [
+  'História de câncer, hipertensão, infarto ou diabetes na família?',
+  'História de alergias?',
+];
 
-function onlyDigits(v){ return (v||'').replace(/\D/g,''); }
+function onlyDigits(v) {
+  return (v || '').replace(/\D/g, '');
+}
 
 const params = new URLSearchParams(location.search);
 const CLIENT_NUMERO = params.get('c') || params.get('id'); // aceita "c" (novo) e "id" (links antigos)
@@ -212,80 +223,148 @@ let STEP_IDX = 0;
 const ANSWERS = {}; // ANSWERS[personKey] = {...}
 let ENDERECO = {};
 
-function listPessoasPublico(c){
-  const todas=[{ key:'titular', label: c.titular.nome||'Titular', tipo:'Titular', pessoa:c.titular }]
-    .concat(c.dependentes.map((d,i)=>({ key:'dep'+i, label: d.nome||('Dependente '+(i+1)), tipo:(i+1)+'º Dependente', pessoa:d })));
-  return VIDA_CODIGO ? todas.filter(p=>p.pessoa.codigoVida===VIDA_CODIGO) : todas;
+function listPessoasPublico(c) {
+  const todas = [
+    { key: 'titular', label: c.titular.nome || 'Titular', tipo: 'Titular', pessoa: c.titular },
+  ].concat(
+    c.dependentes.map((d, i) => ({
+      key: 'dep' + i,
+      label: d.nome || 'Dependente ' + (i + 1),
+      tipo: i + 1 + 'º Dependente',
+      pessoa: d,
+    }))
+  );
+  return VIDA_CODIGO ? todas.filter((p) => p.pessoa.codigoVida === VIDA_CODIGO) : todas;
 }
 
-async function boot(){
+async function boot() {
   const app = document.getElementById('app');
-  if(!CLIENT_NUMERO){
+  if (!CLIENT_NUMERO) {
     showError('Link inválido', 'Faltam informações no link. Peça um novo link para a CDL Mossoró.');
     return;
   }
-  try{
+  try {
     const raw = await storageGet(STORAGE_KEY);
     DB = raw;
     // aceita tanto o número do cliente (formato novo) quanto o id técnico (links antigos)
-    CLIENT = DB.clients.find(c=>c.numeroCliente===CLIENT_NUMERO || c.id===CLIENT_NUMERO);
-    if(!CLIENT){
-      showError('Cadastro não encontrado', 'Não localizamos seus dados. Fale com a CDL Mossoró para receber um novo link.');
+    CLIENT = DB.clients.find((c) => c.numeroCliente === CLIENT_NUMERO || c.id === CLIENT_NUMERO);
+    if (!CLIENT) {
+      showError(
+        'Cadastro não encontrado',
+        'Não localizamos seus dados. Fale com a CDL Mossoró para receber um novo link.'
+      );
       return;
     }
-    if(EMPRESA_CODIGO){
-      const empresa=(DB.empresas||[]).find(e=>e.id===CLIENT.empresaId);
-      if(!empresa || empresa.codigoEmpresa!==EMPRESA_CODIGO){ showError('Link inválido','O código da empresa não corresponde a este cadastro. Peça um novo link à CDL Mossoró.'); return; }
+    if (EMPRESA_CODIGO) {
+      const empresa = (DB.empresas || []).find((e) => e.id === CLIENT.empresaId);
+      // aceita tanto o id técnico da empresa quanto o codigoEmpresa (ambos podem aparecer no link dependendo da versão)
+      const codigoOk =
+        empresa && (empresa.codigoEmpresa === EMPRESA_CODIGO || empresa.id === EMPRESA_CODIGO);
+      if (!codigoOk) {
+        showError(
+          'Link inválido',
+          'O código da empresa não corresponde a este cadastro. Peça um novo link à CDL Mossoró.'
+        );
+        return;
+      }
     }
     const pessoas = listPessoasPublico(CLIENT);
-    if(!pessoas.length){ showError('Vida não encontrada','O código individual desta vida não foi localizado. Peça um novo link à CDL Mossoró.'); return; }
-    STEPS = ['intro','endereco', ...pessoas.map(p=>'pessoa:'+p.key)];
-    document.getElementById('heroSub').textContent = CLIENT.titular.razaoSocial || 'CDL Mossoró × Unimed';
+    if (!pessoas.length) {
+      showError(
+        'Vida não encontrada',
+        'O código individual desta vida não foi localizado. Peça um novo link à CDL Mossoró.'
+      );
+      return;
+    }
+    STEPS = ['intro', 'endereco', ...pessoas.map((p) => 'pessoa:' + p.key)];
+    document.getElementById('heroSub').textContent =
+      CLIENT.titular.razaoSocial || 'CDL Mossoró × Unimed';
     renderStep();
-  }catch(e){
-    console.warn(e);
-    showError('Não foi possível carregar', 'Verifique sua internet e tente abrir o link de novo em alguns instantes.');
+  } catch (e) {
+    console.warn('boot error:', e);
+    const msg = (e.message || '').toLowerCase();
+    if (
+      msg.includes('403') ||
+      msg.includes('rls') ||
+      msg.includes('unauthorized') ||
+      msg.includes('permission')
+    ) {
+      showError(
+        'Acesso não autorizado',
+        'O servidor não conseguiu carregar seus dados. Entre em contato com a CDL Mossoró e informe o código do erro: RLS-403.'
+      );
+    } else if (msg.includes('not found') || msg.includes('404')) {
+      showError(
+        'Cadastro não encontrado',
+        'Não localizamos seus dados com este link. Fale com a CDL Mossoró para receber um novo link.'
+      );
+    } else {
+      showError(
+        'Não foi possível carregar',
+        'Verifique sua internet e tente abrir o link de novo em alguns instantes. (' +
+          (e.message || 'erro desconhecido') +
+          ')'
+      );
+    }
   }
 }
-function showError(title, msg){
-  document.getElementById('app').innerHTML = `<div class="card"><div class="error-box"><h2>${title}</h2><p>${msg}</p></div></div>`;
+function showError(title, msg) {
+  document.getElementById('app').innerHTML =
+    `<div class="card"><div class="error-box"><h2>${title}</h2><p>${msg}</p></div></div>`;
 }
 
-function updateProgress(){
-  const pct = Math.round((STEP_IDX / (STEPS.length)) * 100);
+function updateProgress() {
+  const pct = Math.round((STEP_IDX / STEPS.length) * 100);
   const ring = document.getElementById('progressRing');
-  if(ring){ ring.style.setProperty('--pct', pct); document.getElementById('progressPct').textContent = pct+'%'; }
+  if (ring) {
+    ring.style.setProperty('--pct', pct);
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
 }
 
-function renderStep(){
+function renderStep() {
   const stepId = STEPS[STEP_IDX];
   const app = document.getElementById('app');
-  if(stepId === 'intro'){ renderIntro(app); return; }
-  if(stepId === 'endereco'){ renderEndereco(app); return; }
-  if(stepId.startsWith('pessoa:')){ renderPessoa(app, stepId.split(':')[1]); return; }
+  if (stepId === 'intro') {
+    renderIntro(app);
+    return;
+  }
+  if (stepId === 'endereco') {
+    renderEndereco(app);
+    return;
+  }
+  if (stepId.startsWith('pessoa:')) {
+    renderPessoa(app, stepId.split(':')[1]);
+    return;
+  }
 }
 
-function frameShell(inner, opts){
-  opts = opts||{};
+function frameShell(inner, opts) {
+  opts = opts || {};
   const label = opts.label || '';
   return `
     <div class="card">
-      ${opts.noProgress?'':`
+      ${
+        opts.noProgress
+          ? ''
+          : `
       <div class="progress-row">
         <div class="progress-ring" id="progressRing" style="--pct:0"><span id="progressPct">0%</span></div>
         <div class="progress-label">${label}</div>
-      </div>`}
+      </div>`
+      }
       ${inner}
     </div>`;
 }
 
-function renderIntro(app){
+function renderIntro(app) {
   const t = CLIENT.titular;
-  app.innerHTML = frameShell(`
+  app.innerHTML = frameShell(
+    `
     <div style="text-align:center;">
       <div class="intro-icon">${ICONS.heart}</div>
-      <h2 class="step-title">Olá${t.nome?(', '+t.nome.split(' ')[0]):''}!</h2>
-      <p class="step-sub">Pra concluir a adesão do plano de saúde da <b>${t.razaoSocial||'sua empresa'}</b>, precisamos completar mais algumas informações.</p>
+      <h2 class="step-title">Olá${t.nome ? ', ' + t.nome.split(' ')[0] : ''}!</h2>
+      <p class="step-sub">Pra concluir a adesão do plano de saúde da <b>${t.razaoSocial || 'sua empresa'}</b>, precisamos completar mais algumas informações.</p>
       <ul class="checklist">
         <li>${ICONS.check}<span>Leva cerca de 5 a 8 minutos, dependendo de quantas pessoas estão no plano.</span></li>
         <li>${ICONS.check}<span>Você pode fechar e voltar pelo mesmo link depois, se precisar.</span></li>
@@ -293,12 +372,15 @@ function renderIntro(app){
       </ul>
       <button class="btn btn-primary btn-block" onclick="goNext()">Começar</button>
     </div>
-  `, {noProgress:true});
+  `,
+    { noProgress: true }
+  );
 }
 
-function renderEndereco(app){
+function renderEndereco(app) {
   const e = ENDERECO;
-  app.innerHTML = frameShell(`
+  app.innerHTML = frameShell(
+    `
     <div class="step-head">
       <div class="step-icon">${ICONS.home}</div>
       <div class="eyebrow">Endereço</div>
@@ -306,26 +388,28 @@ function renderEndereco(app){
     <h2 class="step-title">Onde fica sua empresa?</h2>
     <p class="step-sub">Usamos o CEP pra preencher o resto automaticamente.</p>
 
-    <div class="fg"><label>CEP</label><input id="f_cep" placeholder="00000-000" value="${e.cep||''}"><div class="field-hint" id="cepStatus"></div></div>
-    <div class="fg"><label>Endereço</label><input id="f_endereco" value="${e.endereco||''}"></div>
+    <div class="fg"><label>CEP</label><input id="f_cep" placeholder="00000-000" value="${e.cep || ''}"><div class="field-hint" id="cepStatus"></div></div>
+    <div class="fg"><label>Endereço</label><input id="f_endereco" value="${e.endereco || ''}"></div>
     <div class="field-grid">
-      <div class="fg"><label>Número</label><input id="f_numero" value="${e.numero||''}"></div>
-      <div class="fg"><label>Complemento</label><input id="f_complemento" value="${e.complemento||''}"></div>
+      <div class="fg"><label>Número</label><input id="f_numero" value="${e.numero || ''}"></div>
+      <div class="fg"><label>Complemento</label><input id="f_complemento" value="${e.complemento || ''}"></div>
     </div>
     <div class="field-grid">
-      <div class="fg"><label>Bairro</label><input id="f_bairro" value="${e.bairro||''}"></div>
-      <div class="fg"><label>Cidade</label><input id="f_cidade" value="${e.cidade||'Mossoró'}"></div>
+      <div class="fg"><label>Bairro</label><input id="f_bairro" value="${e.bairro || ''}"></div>
+      <div class="fg"><label>Cidade</label><input id="f_cidade" value="${e.cidade || 'Mossoró'}"></div>
     </div>
 
     <div class="q-actions">
       <button class="btn btn-ghost" onclick="goPrev()">Voltar</button>
       <button class="btn btn-primary" onclick="saveEnderecoAndNext()">Continuar</button>
     </div>
-  `, {label:'Endereço'});
+  `,
+    { label: 'Endereço' }
+  );
   updateProgress();
   document.getElementById('f_cep').addEventListener('input', onCepInput);
 }
-function saveEnderecoAndNext(){
+function saveEnderecoAndNext() {
   ENDERECO = {
     cep: onlyDigits(document.getElementById('f_cep').value),
     endereco: document.getElementById('f_endereco').value,
@@ -337,43 +421,53 @@ function saveEnderecoAndNext(){
   goNext();
 }
 let cepTimer = null;
-function onCepInput(e){
-  let v = onlyDigits(e.target.value).slice(0,8);
+function onCepInput(e) {
+  let v = onlyDigits(e.target.value).slice(0, 8);
   e.target.value = v.replace(/^(\d{5})(\d)/, '$1-$2');
   clearTimeout(cepTimer);
-  if(v.length===8){ cepTimer = setTimeout(()=>lookupCep(v), 300); }
+  if (v.length === 8) {
+    cepTimer = setTimeout(() => lookupCep(v), 300);
+  }
 }
-async function lookupCep(digits){
+async function lookupCep(digits) {
   const statusEl = document.getElementById('cepStatus');
-  if(!statusEl) return; // a pessoa já saiu dessa etapa antes da busca terminar
-  statusEl.textContent = 'Buscando endereço...'; statusEl.className='field-hint';
-  try{
+  if (!statusEl) return; // a pessoa já saiu dessa etapa antes da busca terminar
+  statusEl.textContent = 'Buscando endereço...';
+  statusEl.className = 'field-hint';
+  try {
     const r = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
     const data = await r.json();
     const statusEl2 = document.getElementById('cepStatus');
-    if(!statusEl2) return;
-    if(data.erro){ statusEl2.textContent = 'CEP não encontrado — preencha manualmente.'; return; }
+    if (!statusEl2) return;
+    if (data.erro) {
+      statusEl2.textContent = 'CEP não encontrado — preencha manualmente.';
+      return;
+    }
     const enderecoEl = document.getElementById('f_endereco');
-    if(!enderecoEl) return;
-    enderecoEl.value = data.logradouro||'';
-    document.getElementById('f_bairro').value = data.bairro||'';
-    document.getElementById('f_cidade').value = data.localidade||'Mossoró';
-    statusEl2.textContent = 'Endereço preenchido — confira o número.'; statusEl2.className='field-hint ok';
-  }catch(e){
+    if (!enderecoEl) return;
+    enderecoEl.value = data.logradouro || '';
+    document.getElementById('f_bairro').value = data.bairro || '';
+    document.getElementById('f_cidade').value = data.localidade || 'Mossoró';
+    statusEl2.textContent = 'Endereço preenchido — confira o número.';
+    statusEl2.className = 'field-hint ok';
+  } catch (e) {
     const statusEl3 = document.getElementById('cepStatus');
-    if(statusEl3) statusEl3.textContent = 'Não conseguimos buscar agora — preencha manualmente.';
+    if (statusEl3) statusEl3.textContent = 'Não conseguimos buscar agora — preencha manualmente.';
   }
 }
 
-function renderPessoa(app, key){
+function renderPessoa(app, key) {
   const pessoas = listPessoasPublico(CLIENT);
-  const p = pessoas.find(x=>x.key===key);
-  const isTitular = key==='titular';
+  const p = pessoas.find((x) => x.key === key);
+  const isTitular = key === 'titular';
   const ans = ANSWERS[key] || (ANSWERS[key] = {});
   const totalQ = DS_QUESTIONS.length + DS_FAMILY_QUESTIONS.length;
-  const respondidas = DS_QUESTIONS.filter((q,i)=>ans['q'+i]!==undefined).length + DS_FAMILY_QUESTIONS.filter((q,i)=>ans['f'+i]!==undefined).length;
+  const respondidas =
+    DS_QUESTIONS.filter((q, i) => ans['q' + i] !== undefined).length +
+    DS_FAMILY_QUESTIONS.filter((q, i) => ans['f' + i] !== undefined).length;
 
-  app.innerHTML = frameShell(`
+  app.innerHTML = frameShell(
+    `
     <div class="step-head">
       <div class="step-icon green">${ICONS.user}</div>
       <div class="eyebrow">${p.tipo}</div>
@@ -385,153 +479,197 @@ function renderPessoa(app, key){
       <div class="fg"><label>Sexo</label>
         <select id="p_sexo">
           <option value="">Selecione</option>
-          <option value="M" ${p.pessoa.sexo==='M'?'selected':''}>Masculino</option>
-          <option value="F" ${p.pessoa.sexo==='F'?'selected':''}>Feminino</option>
+          <option value="M" ${p.pessoa.sexo === 'M' ? 'selected' : ''}>Masculino</option>
+          <option value="F" ${p.pessoa.sexo === 'F' ? 'selected' : ''}>Feminino</option>
         </select>
       </div>
-      <div class="fg"><label>Nome da mãe</label><input id="p_mae" value="${p.pessoa.nomeMae||''}"></div>
+      <div class="fg"><label>Nome da mãe</label><input id="p_mae" value="${p.pessoa.nomeMae || ''}"></div>
     </div>
-    ${isTitular?`
+    ${
+      isTitular
+        ? `
     <div class="fg"><label>Estado civil</label>
       <select id="p_civil">
         <option value="">Selecione</option>
-        <option value="1" ${CLIENT.titular.estadoCivil==='1'?'selected':''}>Solteiro(a)</option>
-        <option value="2" ${CLIENT.titular.estadoCivil==='2'?'selected':''}>Casado(a)</option>
-        <option value="3" ${CLIENT.titular.estadoCivil==='3'?'selected':''}>Divorciado(a)</option>
-        <option value="4" ${CLIENT.titular.estadoCivil==='4'?'selected':''}>Viúvo(a)</option>
-        <option value="5" ${CLIENT.titular.estadoCivil==='5'?'selected':''}>União estável</option>
+        <option value="1" ${CLIENT.titular.estadoCivil === '1' ? 'selected' : ''}>Solteiro(a)</option>
+        <option value="2" ${CLIENT.titular.estadoCivil === '2' ? 'selected' : ''}>Casado(a)</option>
+        <option value="3" ${CLIENT.titular.estadoCivil === '3' ? 'selected' : ''}>Divorciado(a)</option>
+        <option value="4" ${CLIENT.titular.estadoCivil === '4' ? 'selected' : ''}>Viúvo(a)</option>
+        <option value="5" ${CLIENT.titular.estadoCivil === '5' ? 'selected' : ''}>União estável</option>
       </select>
-    </div>`:''}
+    </div>`
+        : ''
+    }
     <div class="field-grid">
-      <div class="fg"><label>Peso (kg)</label><input type="number" id="p_peso" value="${ans.peso||''}"></div>
-      <div class="fg"><label>Altura (cm)</label><input type="number" id="p_altura" value="${ans.altura||''}"></div>
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="p_peso" value="${ans.peso || ''}"></div>
+      <div class="fg"><label>Altura (cm)</label><input type="number" id="p_altura" value="${ans.altura || ''}"></div>
     </div>
 
     <div class="section-title">Declaração de saúde</div>
     <div class="ds-progress">
       <span id="dsCount">${respondidas}/${totalQ}</span>
-      <div class="bar"><i id="dsBar" style="width:${Math.round(respondidas/totalQ*100)}%"></i></div>
+      <div class="bar"><i id="dsBar" style="width:${Math.round((respondidas / totalQ) * 100)}%"></i></div>
       <span style="color:var(--gray-soft);font-weight:600;">respondidas</span>
     </div>
     <p class="step-sub" style="margin-top:-6px;">Responda com sinceridade — isso não impede sua adesão, só ajuda a Unimed a te orientar melhor.</p>
 
     <div id="dsQuestions">
-      ${DS_QUESTIONS.map((q,i)=>dsQuestionCard('q',i,q,ans)).join('')}
+      ${DS_QUESTIONS.map((q, i) => dsQuestionCard('q', i, q, ans)).join('')}
     </div>
 
     <div class="section-title">Histórico familiar</div>
     <div id="dsFamily">
-      ${DS_FAMILY_QUESTIONS.map((q,i)=>dsQuestionCard('f',i,q,ans,true)).join('')}
+      ${DS_FAMILY_QUESTIONS.map((q, i) => dsQuestionCard('f', i, q, ans, true)).join('')}
     </div>
 
     <div class="q-actions">
       <button class="btn btn-ghost" onclick="savePessoaData('${key}'); goPrev();">Voltar</button>
-      <button class="btn btn-primary" id="pessoaNextBtn" onclick="savePessoaAndNext('${key}')">${STEP_IDX===STEPS.length-1?'Enviar meus dados':'Continuar'}</button>
+      <button class="btn btn-primary" id="pessoaNextBtn" onclick="savePessoaAndNext('${key}')">${STEP_IDX === STEPS.length - 1 ? 'Enviar meus dados' : 'Continuar'}</button>
     </div>
-  `, {label:p.tipo});
+  `,
+    { label: p.tipo }
+  );
   updateProgress();
 }
-function dsQuestionCard(prefix, i, text, ans, noDetail){
-  const val = ans[prefix+i];
-  const cls = val==='Sim' ? 'answered-sim' : val==='Não' ? 'answered-nao' : '';
+function dsQuestionCard(prefix, i, text, ans, noDetail) {
+  const val = ans[prefix + i];
+  const cls = val === 'Sim' ? 'answered-sim' : val === 'Não' ? 'answered-nao' : '';
   return `
     <div class="ds-q-card ${cls}" id="dsCard_${prefix}${i}">
-      <div><span class="ds-q-num">${i+1}</span><span class="ds-q-text">${text}</span></div>
+      <div><span class="ds-q-num">${i + 1}</span><span class="ds-q-text">${text}</span></div>
       <div class="ds-toggle">
-        <button type="button" id="btn_${prefix}${i}_nao" class="${val==='Não'?'active-nao':''}" onclick="setDs('${prefix}',${i},false,${!!noDetail})">Não</button>
-        <button type="button" id="btn_${prefix}${i}_sim" class="${val==='Sim'?'active-sim':''}" onclick="setDs('${prefix}',${i},true,${!!noDetail})">Sim</button>
+        <button type="button" id="btn_${prefix}${i}_nao" class="${val === 'Não' ? 'active-nao' : ''}" onclick="setDs('${prefix}',${i},false,${!!noDetail})">Não</button>
+        <button type="button" id="btn_${prefix}${i}_sim" class="${val === 'Sim' ? 'active-sim' : ''}" onclick="setDs('${prefix}',${i},true,${!!noDetail})">Sim</button>
       </div>
-      ${noDetail?'':`<input class="ds-detail" id="det_${prefix}${i}" placeholder="Especifique" value="${ans[prefix+i+'_det']||''}" style="display:${val==='Sim'?'block':'none'};">`}
+      ${noDetail ? '' : `<input class="ds-detail" id="det_${prefix}${i}" placeholder="Especifique" value="${ans[prefix + i + '_det'] || ''}" style="display:${val === 'Sim' ? 'block' : 'none'};">`}
     </div>`;
 }
-function setDs(prefix, i, isSim, noDetail){
+function setDs(prefix, i, isSim, noDetail) {
   const key = STEPS[STEP_IDX].split(':')[1];
   const ans = ANSWERS[key] || (ANSWERS[key] = {});
-  ans[prefix+i] = isSim ? 'Sim' : 'Não';
+  ans[prefix + i] = isSim ? 'Sim' : 'Não';
   document.getElementById(`btn_${prefix}${i}_nao`).classList.toggle('active-nao', !isSim);
   document.getElementById(`btn_${prefix}${i}_sim`).classList.toggle('active-sim', isSim);
   const card = document.getElementById(`dsCard_${prefix}${i}`);
   card.classList.toggle('answered-sim', isSim);
   card.classList.toggle('answered-nao', !isSim);
-  if(!noDetail){
+  if (!noDetail) {
     const det = document.getElementById(`det_${prefix}${i}`);
     det.style.display = isSim ? 'block' : 'none';
   }
   // atualiza contador
   const totalQ = DS_QUESTIONS.length + DS_FAMILY_QUESTIONS.length;
-  const respondidas = DS_QUESTIONS.filter((q,idx)=>ans['q'+idx]!==undefined).length + DS_FAMILY_QUESTIONS.filter((q,idx)=>ans['f'+idx]!==undefined).length;
-  document.getElementById('dsCount').textContent = respondidas+'/'+totalQ;
-  document.getElementById('dsBar').style.width = Math.round(respondidas/totalQ*100)+'%';
+  const respondidas =
+    DS_QUESTIONS.filter((q, idx) => ans['q' + idx] !== undefined).length +
+    DS_FAMILY_QUESTIONS.filter((q, idx) => ans['f' + idx] !== undefined).length;
+  document.getElementById('dsCount').textContent = respondidas + '/' + totalQ;
+  document.getElementById('dsBar').style.width = Math.round((respondidas / totalQ) * 100) + '%';
 }
-function savePessoaData(key){
+function savePessoaData(key) {
   const ans = ANSWERS[key] || (ANSWERS[key] = {});
   ans.sexoInput = document.getElementById('p_sexo').value;
   ans.maeInput = document.getElementById('p_mae').value;
   ans.peso = document.getElementById('p_peso').value;
   ans.altura = document.getElementById('p_altura').value;
   const civilEl = document.getElementById('p_civil');
-  if(civilEl) ans.civilInput = civilEl.value;
-  DS_QUESTIONS.forEach((q,i)=>{
-    const det = document.getElementById('det_q'+i);
-    if(det) ans['q'+i+'_det'] = det.value;
+  if (civilEl) ans.civilInput = civilEl.value;
+  DS_QUESTIONS.forEach((q, i) => {
+    const det = document.getElementById('det_q' + i);
+    if (det) ans['q' + i + '_det'] = det.value;
   });
 }
-function savePessoaAndNext(key){
+function savePessoaAndNext(key) {
   savePessoaData(key);
-  if(STEP_IDX===STEPS.length-1){ enviarFormulario(); }
-  else{ goNext(); }
+  if (STEP_IDX === STEPS.length - 1) {
+    enviarFormulario();
+  } else {
+    goNext();
+  }
 }
 
-function goNext(){ if(STEP_IDX<STEPS.length-1){ STEP_IDX++; renderStep(); window.scrollTo({top:0,behavior:'smooth'}); } }
-function goPrev(){ if(STEP_IDX>0){ STEP_IDX--; renderStep(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function goNext() {
+  if (STEP_IDX < STEPS.length - 1) {
+    STEP_IDX++;
+    renderStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+function goPrev() {
+  if (STEP_IDX > 0) {
+    STEP_IDX--;
+    renderStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
-async function enviarFormulario(){
+async function enviarFormulario() {
   const btn = document.getElementById('pessoaNextBtn');
-  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+  }
 
   const c = CLIENT;
   c.propostaAdesao = Object.assign({}, c.propostaAdesao, ENDERECO, { uf: 'RN' });
 
   const pessoas = listPessoasPublico(c);
-  pessoas.forEach(p=>{
-    const alvo = p.key==='titular' ? c.titular : c.dependentes[Number(p.key.replace('dep',''))];
+  pessoas.forEach((p) => {
+    const alvo = p.key === 'titular' ? c.titular : c.dependentes[Number(p.key.replace('dep', ''))];
     const ans = ANSWERS[p.key] || {};
     alvo.sexo = ans.sexoInput || alvo.sexo;
     alvo.nomeMae = ans.maeInput || alvo.nomeMae;
-    if(p.key==='titular' && ans.civilInput) c.titular.estadoCivil = ans.civilInput;
+    if (p.key === 'titular' && ans.civilInput) c.titular.estadoCivil = ans.civilInput;
     const ds = {};
-    DS_QUESTIONS.forEach((q,i)=>{ ds['q'+i] = ans['q'+i]||'Não'; if(ds['q'+i]==='Sim') ds['q'+i+'_det'] = ans['q'+i+'_det']||''; });
-    DS_FAMILY_QUESTIONS.forEach((q,i)=>{ ds['f'+i] = ans['f'+i]||'Não'; });
-    ds.peso = ans.peso; ds.altura = ans.altura;
+    DS_QUESTIONS.forEach((q, i) => {
+      ds['q' + i] = ans['q' + i] || 'Não';
+      if (ds['q' + i] === 'Sim') ds['q' + i + '_det'] = ans['q' + i + '_det'] || '';
+    });
+    DS_FAMILY_QUESTIONS.forEach((q, i) => {
+      ds['f' + i] = ans['f' + i] || 'Não';
+    });
+    ds.peso = ans.peso;
+    ds.altura = ans.altura;
     alvo.dsRespostas = ds;
   });
 
   c.formularioClientePreenchidoEm = new Date().toISOString();
-  if(c.etapaAdesao === 'nova' || c.etapaAdesao === 'documentacao'){ c.etapaAdesao = 'questionario'; }
+  if (c.etapaAdesao === 'nova' || c.etapaAdesao === 'documentacao') {
+    c.etapaAdesao = 'questionario';
+  }
   c.historico = c.historico || [];
-  c.historico.push({ data:new Date().toISOString(), texto:'Cliente preencheu o formulário pelo link (endereço + declaração de saúde).' });
+  c.historico.push({
+    data: new Date().toISOString(),
+    texto: 'Cliente preencheu o formulário pelo link (endereço + declaração de saúde).',
+  });
 
-  try{
+  try {
     const fresh = await storageGet(STORAGE_KEY);
-    const idx = fresh.clients.findIndex(x=>x.id===CLIENT.id);
-    if(idx>=0) fresh.clients[idx] = c; else fresh.clients.push(c);
+    const idx = fresh.clients.findIndex((x) => x.id === CLIENT.id);
+    if (idx >= 0) fresh.clients[idx] = c;
+    else fresh.clients.push(c);
     await storageSet(STORAGE_KEY, fresh);
     showSuccess();
-  }catch(e){
+  } catch (e) {
     console.warn(e);
-    if(btn){ btn.disabled = false; btn.textContent = 'Enviar meus dados'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar meus dados';
+    }
     alert('Não foi possível enviar agora. Verifique sua internet e tente novamente.');
   }
 }
 
-function showSuccess(){
-  document.getElementById('app').innerHTML = frameShell(`
+function showSuccess() {
+  document.getElementById('app').innerHTML = frameShell(
+    `
     <div style="text-align:center;">
       <div class="success-icon">${ICONS.check}</div>
       <h2 class="step-title">Recebemos seus dados!</h2>
       <p class="step-sub">Obrigado por completar as informações. Nosso time da CDL Mossoró já está com tudo em mãos pra dar andamento à sua adesão junto à Unimed.</p>
     </div>
-  `, {noProgress:true});
+  `,
+    { noProgress: true }
+  );
 }
 
 document.getElementById('footnoteArea').innerHTML =
