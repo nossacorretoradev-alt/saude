@@ -147,25 +147,38 @@ function supabaseHeaders(extra) {
   // com 401. Só entra no header "apikey".
   return Object.assign({ apikey: SUPABASE_ANON_KEY }, extra || {});
 }
-async function storageGet(key) {
-  const url = `${SUPABASE_URL}/rest/v1/portal_storage?key=eq.${encodeURIComponent(key)}&select=value`;
-  const res = await fetch(url, { headers: supabaseHeaders() });
-  if (!res.ok) throw new Error('Falha ao buscar dados: ' + res.status);
-  const rows = await res.json();
-  if (!rows.length) throw new Error('not found');
-  return rows[0].value;
-}
-async function storageSet(key, value) {
-  const url = `${SUPABASE_URL}/rest/v1/portal_storage`;
+async function buscarFormularioPublico(numeroCliente, codigoEmpresa, codigoVida) {
+  const url = `${SUPABASE_URL}/functions/v1/public-questionario`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: supabaseHeaders({
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
+    headers: supabaseHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      action: 'get',
+      numeroCliente,
+      codigoEmpresa,
+      codigoVida,
     }),
-    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
   });
-  if (!res.ok) throw new Error('Falha ao salvar: ' + res.status);
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Falha ao buscar dados: ' + res.status);
+  return result;
+}
+async function enviarFormularioPublico(numeroCliente, codigoEmpresa, endereco, pessoas) {
+  const url = `${SUPABASE_URL}/functions/v1/public-questionario`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: supabaseHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      action: 'submit',
+      numeroCliente,
+      codigoEmpresa,
+      endereco,
+      pessoas,
+    }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Falha ao salvar: ' + res.status);
+  return result;
 }
 
 const ICONS = {
@@ -244,30 +257,10 @@ async function boot() {
     return;
   }
   try {
-    const raw = await storageGet(STORAGE_KEY);
-    DB = raw;
-    // aceita tanto o número do cliente (formato novo) quanto o id técnico (links antigos)
-    CLIENT = DB.clients.find((c) => c.numeroCliente === CLIENT_NUMERO || c.id === CLIENT_NUMERO);
-    if (!CLIENT) {
-      showError(
-        'Cadastro não encontrado',
-        'Não localizamos seus dados. Fale com a CDL Mossoró para receber um novo link.'
-      );
-      return;
-    }
-    if (EMPRESA_CODIGO) {
-      const empresa = (DB.empresas || []).find((e) => e.id === CLIENT.empresaId);
-      // aceita tanto o id técnico da empresa quanto o codigoEmpresa (ambos podem aparecer no link dependendo da versão)
-      const codigoOk =
-        empresa && (empresa.codigoEmpresa === EMPRESA_CODIGO || empresa.id === EMPRESA_CODIGO);
-      if (!codigoOk) {
-        showError(
-          'Link inválido',
-          'O código da empresa não corresponde a este cadastro. Peça um novo link à CDL Mossoró.'
-        );
-        return;
-      }
-    }
+    // A validação de empresa (EMPRESA_CODIGO) e de vida (VIDA_CODIGO) agora
+    // já acontece dentro da Edge Function, no servidor — não precisa mais
+    // repetir aqui.
+    CLIENT = await buscarFormularioPublico(CLIENT_NUMERO, EMPRESA_CODIGO, VIDA_CODIGO);
     const pessoas = listPessoasPublico(CLIENT);
     if (!pessoas.length) {
       showError(
@@ -293,7 +286,12 @@ async function boot() {
         'Acesso não autorizado',
         'O servidor não conseguiu carregar seus dados. Entre em contato com a CDL Mossoró e informe o código do erro: RLS-403.'
       );
-    } else if (msg.includes('not found') || msg.includes('404')) {
+    } else if (msg.includes('empresa-invalida')) {
+      showError(
+        'Link inválido',
+        'O código da empresa não corresponde a este cadastro. Peça um novo link à CDL Mossoró.'
+      );
+    } else if (msg.includes('not-found') || msg.includes('not found') || msg.includes('404')) {
       showError(
         'Cadastro não encontrado',
         'Não localizamos seus dados com este link. Fale com a CDL Mossoró para receber um novo link.'
@@ -610,15 +608,10 @@ async function enviarFormulario() {
   }
 
   const c = CLIENT;
-  c.propostaAdesao = Object.assign({}, c.propostaAdesao, ENDERECO, { uf: 'RN' });
-
+  const pessoasPayload = [];
   const pessoas = listPessoasPublico(c);
   pessoas.forEach((p) => {
-    const alvo = p.key === 'titular' ? c.titular : c.dependentes[Number(p.key.replace('dep', ''))];
     const ans = ANSWERS[p.key] || {};
-    alvo.sexo = ans.sexoInput || alvo.sexo;
-    alvo.nomeMae = ans.maeInput || alvo.nomeMae;
-    if (p.key === 'titular' && ans.civilInput) c.titular.estadoCivil = ans.civilInput;
     const ds = {};
     DS_QUESTIONS.forEach((q, i) => {
       ds['q' + i] = ans['q' + i] || 'Não';
@@ -629,25 +622,17 @@ async function enviarFormulario() {
     });
     ds.peso = ans.peso;
     ds.altura = ans.altura;
-    alvo.dsRespostas = ds;
-  });
-
-  c.formularioClientePreenchidoEm = new Date().toISOString();
-  if (c.etapaAdesao === 'nova' || c.etapaAdesao === 'documentacao') {
-    c.etapaAdesao = 'questionario';
-  }
-  c.historico = c.historico || [];
-  c.historico.push({
-    data: new Date().toISOString(),
-    texto: 'Cliente preencheu o formulário pelo link (endereço + declaração de saúde).',
+    pessoasPayload.push({
+      key: p.key,
+      sexo: ans.sexoInput || undefined,
+      nomeMae: ans.maeInput || undefined,
+      estadoCivil: p.key === 'titular' ? ans.civilInput || undefined : undefined,
+      dsRespostas: ds,
+    });
   });
 
   try {
-    const fresh = await storageGet(STORAGE_KEY);
-    const idx = fresh.clients.findIndex((x) => x.id === CLIENT.id);
-    if (idx >= 0) fresh.clients[idx] = c;
-    else fresh.clients.push(c);
-    await storageSet(STORAGE_KEY, fresh);
+    await enviarFormularioPublico(CLIENT_NUMERO, EMPRESA_CODIGO, ENDERECO, pessoasPayload);
     showSuccess();
   } catch (e) {
     console.warn(e);
