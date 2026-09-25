@@ -1156,12 +1156,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <!-- VIDAS -->
       <div class="q-step" id="step-vidas">
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span><div class="q-eyebrow">Vidas no plano</div></div>
-        <h2 class="q-title">Quantas vidas vão entrar no novo plano?</h2>
-        <p class="q-sub">Conte titular e todos os dependentes que vão ficar no plano.</p>
-        <div class="field">
-          <label for="vidasTotal">Número de vidas</label>
-          <input type="number" id="vidasTotal" min="1" placeholder="Ex: 4">
-        </div>
+        <h2 class="q-title">Quem vai entrar no novo plano?</h2>
+        <p class="q-sub">Adicione cada titular e quantos dependentes ele tem. Na próxima etapa, cada titular pode escolher o próprio plano.</p>
+        <div id="titularesSimList"></div>
+        <button type="button" class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="addTitularSim()">+ Adicionar titular</button>
+        <p id="totalVidasSimInfo" style="text-align:center;font-weight:700;color:var(--navy);margin-top:14px;"></p>
         <div class="q-actions">
           <button class="btn btn-ghost" onclick="prev()">Voltar</button>
           <button class="btn btn-primary" onclick="validateVidasStep()">Continuar</button>
@@ -1236,22 +1235,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></span><div class="q-eyebrow">Resultado</div></div>
         <h2 class="q-title">Sua simulação</h2>
         <p class="q-sub" id="resumoVidas"></p>
+
+        <div id="titularesPlanosArea" style="margin-bottom:22px;"></div>
+
+        <h3 style="font-size:15px;color:var(--navy);margin:6px 0 4px;">Compare os planos</h3>
+        <p class="q-sub" style="margin-bottom:10px;">Valores se todas as vidas ficarem no mesmo plano. Use "Aplicar a todos" pra escolher o mesmo plano pra todo mundo.</p>
         <div class="plans" id="plansArea"></div>
         <p class="compare-note" id="compareNote"></p>
-
-        <div id="chosenPlanBox" style="display:none; margin-top:18px;">
-          <div class="status-card ok">
-            <div class="status-icon">✓</div>
-            <div>
-              <h4>Plano escolhido: <span id="chosenPlanName"></span></h4>
-              <p>Pode baixar o orçamento em PDF quando quiser, ou já seguir direto com a adesão — não vamos pedir seus dados de novo.</p>
-            </div>
-          </div>
-          <div class="q-actions">
-            <button class="btn btn-ghost" onclick="downloadOrcamentoAgain()">Baixar orçamento (PDF)</button>
-            <button class="btn btn-primary" onclick="finalizarAdesao(event)">Quero aderir agora</button>
-          </div>
-        </div>
 
         <div class="q-actions">
           <button class="btn btn-ghost" onclick="prev()">Voltar</button>
@@ -2779,10 +2769,78 @@ observer.observe(document.getElementById('step-signature'), {
 });
 
 /* ===== VIDAS / UPLOAD / RESULTADO ===== */
+// Cada titular tem seus próprios dependentes e escolhe o próprio plano
+// (na tela de resultado). Total de vidas = titulares + todos os dependentes.
+let SIM_TITULARES = [{ nome: '', dependentes: 0, planoKey: null }];
+
+function totalVidasSim() {
+  return SIM_TITULARES.reduce((n, t) => n + 1 + (Number(t.dependentes) || 0), 0);
+}
+
+function escapeHtmlSim(v) {
+  return String(v || '').replace(
+    /[&<>"']/g,
+    (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]
+  );
+}
+
+function renderTitularesSim() {
+  const list = document.getElementById('titularesSimList');
+  if (!list) return;
+  list.innerHTML = SIM_TITULARES.map(
+    (t, i) => `
+    <div style="border:1.5px solid var(--line, #e3e5ea);border-radius:14px;padding:14px;margin-bottom:10px;background:#fff;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="color:var(--navy);">Titular ${i + 1}</b>
+        ${SIM_TITULARES.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="removeTitularSim(${i})">Remover</button>` : ''}
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Nome do titular (opcional)</label>
+        <input type="text" value="${escapeHtmlSim(t.nome)}" placeholder="Ex: Maria Souza" oninput="SIM_TITULARES[${i}].nome=this.value">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="font-size:13px;font-weight:600;">Dependentes deste titular</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button type="button" class="btn btn-ghost btn-sm" style="min-width:38px;" onclick="alterarDependentesSim(${i},-1)">−</button>
+          <b style="min-width:20px;text-align:center;font-size:16px;">${t.dependentes}</b>
+          <button type="button" class="btn btn-ghost btn-sm" style="min-width:38px;" onclick="alterarDependentesSim(${i},1)">+</button>
+        </div>
+      </div>
+    </div>`
+  ).join('');
+  const total = totalVidasSim();
+  document.getElementById('totalVidasSimInfo').textContent =
+    `${SIM_TITULARES.length} titular(es) · ${total} vida(s) no total`;
+}
+
+function addTitularSim() {
+  SIM_TITULARES.push({ nome: '', dependentes: 0, planoKey: null });
+  renderTitularesSim();
+}
+
+function removeTitularSim(i) {
+  if (SIM_TITULARES.length <= 1) return;
+  SIM_TITULARES.splice(i, 1);
+  renderTitularesSim();
+}
+
+function alterarDependentesSim(i, delta) {
+  SIM_TITULARES[i].dependentes = Math.max(
+    0,
+    Math.min(20, (Number(SIM_TITULARES[i].dependentes) || 0) + delta)
+  );
+  renderTitularesSim();
+}
+
+function nomeTitularSim(i) {
+  return (SIM_TITULARES[i].nome || '').trim() || `Titular ${i + 1}`;
+}
+
+document.addEventListener('DOMContentLoaded', renderTitularesSim);
+
 function validateVidasStep() {
-  const total = Number(document.getElementById('vidasTotal').value || 0);
-  if (total <= 0) {
-    alert('Informe ao menos 1 vida no plano.');
+  if (!SIM_TITULARES.length) {
+    alert('Adicione ao menos 1 titular.');
     return;
   }
   next();
@@ -2880,9 +2938,7 @@ function planDiffChips(key) {
 }
 
 function renderResultsStep() {
-  const totalVidas = Number(document.getElementById('vidasTotal').value || 0);
-  document.getElementById('resumoVidas').textContent = `Comparativo para ${totalVidas} vida(s)`;
-
+  const totalVidas = totalVidasSim();
   const valorAtualInformado = Number(document.getElementById('valorAtual').value || 0);
   const entries = Object.entries(PLAN_VALUES).map(([key, p]) => ({
     key,
@@ -2890,23 +2946,25 @@ function renderResultsStep() {
     total: p.valor * totalVidas,
   }));
   const cheapest = entries.reduce((a, b) => (a.total < b.total ? a : b));
+  // quem ainda não escolheu começa no plano que veio da landing page, ou no mais barato
+  const planoPadrao =
+    preferredPlanKey && PLAN_VALUES[preferredPlanKey] ? preferredPlanKey : cheapest.key;
+  SIM_TITULARES.forEach((t) => {
+    if (!t.planoKey || !PLAN_VALUES[t.planoKey]) t.planoKey = planoPadrao;
+  });
   lastCalc = {
     totalVidas,
     valorAtualInformado,
     entries,
   };
+  document.getElementById('resumoVidas').textContent =
+    `${SIM_TITULARES.length} titular(es) · ${totalVidas} vida(s). Escolha o plano de cada titular — os dependentes entram no mesmo plano do titular.`;
+
+  renderTitularesPlanosSim();
 
   let html = '';
   entries.forEach((p) => {
     const isBest = p.nome === cheapest.nome;
-    let badge = '';
-    if (valorAtualInformado > 0) {
-      const diff = valorAtualInformado - p.total;
-      badge =
-        diff > 0
-          ? `<span class="plan-badge save">Economia de ${formatBRL(diff)}/mês</span>`
-          : `<span class="plan-badge diff">${formatBRL(Math.abs(diff))}/mês a mais</span>`;
-    }
     html += `
       <div class="plan-card ${isBest ? 'best' : ''}" id="planCard_${p.key}">
         <div class="plan-top">
@@ -2914,26 +2972,82 @@ function renderResultsStep() {
             <div class="plan-name">${p.nome}${p.key === preferredPlanKey ? ' <span class="plan-badge" style="background:var(--navy);color:#fff;">Selecionado</span>' : ''}</div>
             <div class="plan-tag">${p.tag} · ${formatBRL(p.valor)}/vida</div>
           </div>
-          <div class="plan-price">${formatBRL(p.total)}<br><small>/mês</small></div>
+          <div class="plan-price">${formatBRL(p.total)}<br><small>/mês (todos)</small></div>
         </div>
-        ${badge}
         <div class="plan-diffs">${planDiffChips(p.key)}</div>
         <details style="margin-top:10px">
           <summary style="cursor:pointer;font-size:12px;color:var(--navy);font-weight:700">Ver tabela completa de coparticipação</summary>
           ${copaTableHTML(p.key)}
         </details>
         <div class="q-actions" style="margin-top:12px">
-          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="downloadOrcamento('${p.key}')">Baixar orçamento</button>
-          <button class="btn btn-primary btn-sm" style="flex:1" onclick="choosePlan('${p.key}')">Escolher este plano</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="aplicarPlanoATodosSim('${p.key}')">Aplicar a todos</button>
         </div>
       </div>`;
   });
   document.getElementById('plansArea').innerHTML = html;
-  document.getElementById('compareNote').textContent =
-    valorAtualInformado > 0
-      ? `Comparado ao valor atual informado de ${formatBRL(valorAtualInformado)}/mês.`
-      : 'Informe o valor atual da sua fatura para ver a economia estimada.';
-  document.getElementById('chosenPlanBox').style.display = 'none';
+  document.getElementById('compareNote').textContent = '';
+}
+
+function totalSelecionadoSim() {
+  return SIM_TITULARES.reduce((soma, t) => {
+    const plano = PLAN_VALUES[t.planoKey];
+    return soma + (plano ? plano.valor * (1 + (Number(t.dependentes) || 0)) : 0);
+  }, 0);
+}
+
+function renderTitularesPlanosSim() {
+  const area = document.getElementById('titularesPlanosArea');
+  if (!area) return;
+  const total = totalSelecionadoSim();
+  const valorAtual = lastCalc ? lastCalc.valorAtualInformado : 0;
+  let comparacao = '';
+  if (valorAtual > 0) {
+    const diff = valorAtual - total;
+    comparacao =
+      diff > 0
+        ? `<span class="plan-badge save">Economia de ${formatBRL(diff)}/mês em relação ao que você paga hoje</span>`
+        : `<span class="plan-badge diff">${formatBRL(Math.abs(diff))}/mês a mais que o valor atual</span>`;
+  }
+  area.innerHTML = `
+    <div style="border:2px solid var(--navy);border-radius:16px;padding:16px;background:#fff;">
+      <div style="font-weight:800;color:var(--navy);margin-bottom:10px;">Plano de cada titular</div>
+      ${SIM_TITULARES.map((t, i) => {
+        const plano = PLAN_VALUES[t.planoKey];
+        const vidas = 1 + (Number(t.dependentes) || 0);
+        return `
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line, #e3e5ea);">
+          <div style="flex:1 1 160px;min-width:0;">
+            <b>${escapeHtmlSim(nomeTitularSim(i))}</b>
+            <div style="font-size:12px;color:var(--muted, #667085);">${vidas} vida(s) · titular${t.dependentes ? ` + ${t.dependentes} dependente(s)` : ''}</div>
+          </div>
+          <select style="flex:1 1 200px;padding:9px;border-radius:10px;border:1.5px solid var(--line, #e3e5ea);" onchange="SIM_TITULARES[${i}].planoKey=this.value; renderTitularesPlanosSim();">
+            ${Object.entries(PLAN_VALUES)
+              .map(
+                ([k, p]) =>
+                  `<option value="${k}" ${t.planoKey === k ? 'selected' : ''}>${p.nome} — ${formatBRL(p.valor)}/vida</option>`
+              )
+              .join('')}
+          </select>
+          <b style="flex:0 0 auto;min-width:110px;text-align:right;">${plano ? formatBRL(plano.valor * vidas) : '—'}</b>
+        </div>`;
+      }).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <div style="font-size:18px;font-weight:800;color:var(--navy);">Total: ${formatBRL(total)}/mês</div>
+        ${comparacao}
+      </div>
+      <div class="q-actions" style="margin-top:14px;">
+        <button class="btn btn-ghost" onclick="generateOrcamentoPDF()">Baixar orçamento (PDF)</button>
+        <button class="btn btn-primary" onclick="finalizarAdesao(event)">Quero aderir agora</button>
+      </div>
+    </div>`;
+}
+
+function aplicarPlanoATodosSim(planKey) {
+  SIM_TITULARES.forEach((t) => (t.planoKey = planKey));
+  renderTitularesPlanosSim();
+  document
+    .getElementById('titularesPlanosArea')
+    .scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function goToResults() {
@@ -2956,26 +3070,6 @@ function goToResults() {
   showStepId(flow[idx]);
 }
 
-let chosenPlanKey = null;
-
-function choosePlan(planKey) {
-  chosenPlanKey = planKey;
-  document.getElementById('chosenPlanName').textContent = PLAN_VALUES[planKey].nome;
-  document.getElementById('chosenPlanBox').style.display = 'block';
-  document.getElementById('chosenPlanBox').scrollIntoView({
-    behavior: 'smooth',
-    block: 'center',
-  });
-}
-
-function downloadOrcamento(planKey) {
-  generateOrcamentoPDF(planKey);
-}
-
-function downloadOrcamentoAgain() {
-  if (chosenPlanKey) generateOrcamentoPDF(chosenPlanKey);
-}
-
 function getCelularAtual() {
   const id = isAssociado ? 'celularAssociado' : 'celularDiretor';
   return document.getElementById(id)?.value || '';
@@ -2996,15 +3090,20 @@ function getNomeEmailAtual() {
   };
 }
 
-function generateOrcamentoPDF(planKey) {
+function generateOrcamentoPDF() {
   if (!lastCalc) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const plano = PLAN_VALUES[planKey];
-  const total = plano.valor * lastCalc.totalVidas;
   const contato = getNomeEmailAtual();
   const cnpj = document.getElementById('cnpj').value || '-';
   const hoje = new Date().toLocaleDateString('pt-BR');
+  const total = totalSelecionadoSim();
+  const ensureSpace = (need) => {
+    if (y + need > 282) {
+      doc.addPage();
+      y = 20;
+    }
+  };
 
   let y = 20;
   try {
@@ -3050,24 +3149,46 @@ function generateOrcamentoPDF(planKey) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(0, 4, 45);
-  doc.text('Plano escolhido', 15, y);
-  y += 8;
+  doc.text('Titulares e planos', 15, y);
+  y += 7;
 
+  // tabela: uma linha por titular (larguras fixas por coluna, com quebra de texto)
+  const colX = [18, 78, 150, 192];
+  doc.setFillColor(246, 246, 248);
+  doc.rect(15, y - 5, 180, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 100);
+  doc.text('Titular', colX[0], y);
+  doc.text('Plano', colX[1], y);
+  doc.text('Vidas', colX[2], y);
+  doc.text('Subtotal', colX[3], y, { align: 'right' });
+  y += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(30, 30, 40);
+  SIM_TITULARES.forEach((t, i) => {
+    const plano = PLAN_VALUES[t.planoKey];
+    const vidas = 1 + (Number(t.dependentes) || 0);
+    const nomeLinhas = doc.splitTextToSize(nomeTitularSim(i), 56);
+    const planoLinhas = doc.splitTextToSize(plano ? plano.nome : '-', 68);
+    const altura = Math.max(nomeLinhas.length, planoLinhas.length) * 5;
+    ensureSpace(altura + 3);
+    doc.text(nomeLinhas, colX[0], y);
+    doc.text(planoLinhas, colX[1], y);
+    doc.text(`${vidas}${t.dependentes ? ` (1 + ${t.dependentes} dep.)` : ''}`, colX[2], y);
+    doc.text(plano ? formatBRL(plano.valor * vidas) : '-', colX[3], y, { align: 'right' });
+    y += Math.max(altura, 6) + 1.5;
+  });
+  y += 2;
+  ensureSpace(20);
   doc.setFillColor(231, 243, 236);
-  doc.roundedRect(15, y - 6, 180, 24, 2, 2, 'F');
+  doc.roundedRect(15, y - 5, 180, 12, 2, 2, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(0, 4, 45);
-  doc.text(`${plano.nome} (${plano.tag})`, 20, y + 3);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(70, 70, 70);
-  doc.text(`${formatBRL(plano.valor)} por vida × ${lastCalc.totalVidas} vida(s)`, 20, y + 10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(0, 4, 45);
-  doc.text(`Total: ${formatBRL(total)}/mês`, 20, y + 17);
-  y += 26;
+  doc.text(`Total: ${formatBRL(total)}/mês  ·  ${lastCalc.totalVidas} vida(s)`, 20, y + 3);
+  y += 14;
 
   if (lastCalc.valorAtualInformado > 0) {
     const diff = lastCalc.valorAtualInformado - total;
@@ -3084,44 +3205,51 @@ function generateOrcamentoPDF(planKey) {
     y += 10;
   }
 
-  y += 2;
-  doc.setDrawColor(226, 226, 232);
-  doc.line(15, y, 195, y);
-  y += 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(0, 4, 45);
-  doc.text('Coparticipação do plano escolhido', 15, y);
-  y += 8;
-
-  const c = COPARTICIPACAO[planKey];
-  const rows = [
-    ['Consulta eletiva', c.consultaEletiva],
-    ['Consulta PA', c.consultaPA],
-    ['Exames simples', c.examesSimples],
-    ['Exames especiais', c.examesEspeciais],
-    ['Terapias simples', c.terapiasSimples],
-    ['Terapias especiais', c.terapiasEspeciais],
-    ['Procedimentos ambulatoriais', c.procedAmb],
-    ['Internação', c.internacao],
-    ['Internação psiquiátrica', c.internacaoPsiq],
+  // uma tabela de coparticipação pra cada plano escolhido (sem repetir)
+  const planosUsados = [
+    ...new Set(SIM_TITULARES.map((t) => t.planoKey).filter((k) => PLAN_VALUES[k])),
   ];
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  rows.forEach(([label, val], i) => {
-    if (i % 2 === 0) {
-      doc.setFillColor(246, 246, 248);
-      doc.rect(15, y - 4.5, 180, 6.5, 'F');
-    }
-    doc.setTextColor(90, 90, 100);
-    doc.text(label, 18, y);
+  planosUsados.forEach((planKey) => {
+    ensureSpace(75);
+    y += 2;
+    doc.setDrawColor(226, 226, 232);
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
     doc.setTextColor(0, 4, 45);
-    doc.text(String(val), 192, y, {
-      align: 'right',
+    doc.text(`Coparticipação — ${PLAN_VALUES[planKey].nome}`, 15, y);
+    y += 8;
+    const c = COPARTICIPACAO[planKey];
+    const rows = [
+      ['Consulta eletiva', c.consultaEletiva],
+      ['Consulta PA', c.consultaPA],
+      ['Exames simples', c.examesSimples],
+      ['Exames especiais', c.examesEspeciais],
+      ['Terapias simples', c.terapiasSimples],
+      ['Terapias especiais', c.terapiasEspeciais],
+      ['Procedimentos ambulatoriais', c.procedAmb],
+      ['Internação', c.internacao],
+      ['Internação psiquiátrica', c.internacaoPsiq],
+    ];
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    rows.forEach(([label, val], i) => {
+      if (i % 2 === 0) {
+        doc.setFillColor(246, 246, 248);
+        doc.rect(15, y - 4.5, 180, 6.5, 'F');
+      }
+      doc.setTextColor(90, 90, 100);
+      doc.text(label, 18, y);
+      doc.setTextColor(0, 4, 45);
+      doc.text(String(val), 192, y, {
+        align: 'right',
+      });
+      y += 6.5;
     });
-    y += 6.5;
   });
 
+  ensureSpace(24);
   y += 8;
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(8.5);
@@ -3149,7 +3277,7 @@ function generateOrcamentoPDF(planKey) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
-  const orcamentoFilename = `orcamento-${plano.nome.toLowerCase().replace(/\s+/g, '-')}-${empresaSlug || 'empresa'}.pdf`;
+  const orcamentoFilename = `orcamento-plano-saude-${empresaSlug || 'empresa'}.pdf`;
   doc.save(orcamentoFilename);
 
   // Também envia uma cópia pro Storage privado, pra ficar disponível no portal como anexo do cliente
@@ -3171,7 +3299,7 @@ function generateOrcamentoPDF(planKey) {
 }
 
 async function finalizarAdesao(evt) {
-  const n = lastCalc ? lastCalc.totalVidas : 1;
+  const n = totalVidasSim();
 
   const contato = getNomeEmailAtual();
   const administradoraAtual = document.getElementById('administradora')?.value || null;
@@ -3255,7 +3383,24 @@ async function finalizarAdesao(evt) {
     fatura_path: faturaPath,
     internal_pdf_path: internalPdfPath, // contrato + carimbo de evidências — só acessível pelo painel do Supabase
     orcamento_path: orcamentoPdfPath, // cópia do orçamento em PDF que o cliente baixou
-    plano_escolhido: chosenPlanKey ? PLAN_VALUES[chosenPlanKey].nome : null,
+    plano_escolhido: (() => {
+      const nomes = [
+        ...new Set(SIM_TITULARES.map((t) => PLAN_VALUES[t.planoKey]?.nome).filter(Boolean)),
+      ];
+      return nomes.length === 1
+        ? nomes[0]
+        : nomes.length
+          ? `Planos variados (${nomes.join(' / ')})`
+          : null;
+    })(),
+    // um item por titular: nome, plano e quantos dependentes — o portal usa isso
+    // pra montar o orçamento e criar os titulares na Implantação
+    grupos: SIM_TITULARES.map((t, i) => ({
+      titular: nomeTitularSim(i),
+      planoKey: t.planoKey,
+      plano: PLAN_VALUES[t.planoKey]?.nome || '',
+      quantidadeDependentes: Number(t.dependentes) || 0,
+    })),
     administradora_atual: administradoraAtual,
     valor_atual: valorAtual ? Number(valorAtual) : null,
     qtd_vidas: n, // quantidade informada — os dados de cada pessoa são completados depois, pelo link individual
@@ -3267,7 +3412,14 @@ async function finalizarAdesao(evt) {
 
   let enviadoComSucesso = false;
   try {
-    const { error } = await supabaseClient.from('leads').insert(payload);
+    let { error } = await supabaseClient.from('leads').insert(payload);
+    // Se a coluna "grupos" ainda não existir no banco, grava sem ela em vez de
+    // perder a adesão do cliente (o total de vidas e o plano continuam indo).
+    if (error && /grupos/i.test(error.message || '')) {
+      console.warn('Coluna "grupos" ausente na tabela leads — gravando sem ela.', error);
+      const { grupos, ...semGrupos } = payload;
+      ({ error } = await supabaseClient.from('leads').insert(semGrupos));
+    }
     enviadoComSucesso = !error;
     if (error) console.warn('Erro ao gravar lead no Supabase:', error);
   } catch (e) {
