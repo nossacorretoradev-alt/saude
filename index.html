@@ -1328,7 +1328,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="cdl-tier-card">
         <div class="cdl-tier-header">
           <div class="cdl-tier-name">Usuário SPC<br>Faturamento 1</div>
-          <div class="cdl-tier-price">R$ 48<small>/mês</small></div>
+          <div class="cdl-tier-price">R$ 48,00<small>/mês</small></div>
         </div>
         <ul class="cdl-tier-list">
           <li>50% OFF em Certificado Digital</li>
@@ -1342,7 +1342,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="cdl-tier-card">
         <div class="cdl-tier-header">
           <div class="cdl-tier-name">Usuário SPC<br>Faturamento 2</div>
-          <div class="cdl-tier-price">R$ 58<small>/mês</small></div>
+          <div class="cdl-tier-price">R$ 58,00<small>/mês</small></div>
         </div>
         <ul class="cdl-tier-list">
           <li>2 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 7 negativações no SPC</li>
@@ -1357,7 +1357,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="cdl-tier-card">
         <div class="cdl-tier-header">
           <div class="cdl-tier-name">Usuário SPC<br>Faturamento 3</div>
-          <div class="cdl-tier-price">R$ 78<small>/mês</small></div>
+          <div class="cdl-tier-price">R$ 78,00<small>/mês</small></div>
         </div>
         <ul class="cdl-tier-list">
           <li>5 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 13 negativações no SPC</li>
@@ -1373,7 +1373,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <span class="plan-type-badge">Categoria mais completa</span>
         <div class="cdl-tier-header">
           <div class="cdl-tier-name">Associado CDL</div>
-          <div class="cdl-tier-price">R$ 145<small>/mês</small></div>
+          <div class="cdl-tier-price">R$ 145,00<small>/mês</small></div>
         </div>
         <ul class="cdl-tier-list">
           <li>12 consultas SPC Brasil (SPC, Serasa, Ação, Protesto, Score) e/ou 27 negativações</li>
@@ -2914,11 +2914,11 @@ function setFaturaMode(mode) {
 }
 
 function formatBRL(v) {
-  return v.toLocaleString('pt-BR', {
+  return Number(v || 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 }
 
