@@ -2475,6 +2475,14 @@ function buildContractPDF(signatureDataUrl, signedAt) {
     } catch (e) {}
   }
   doc.setDrawColor(60, 60, 60);
+  // guarda onde ficaram as linhas de assinatura (A4 = 210 x 297 mm) pra
+  // posicionar as assinaturas da Autentique em cima delas
+  window.__linhasAssinatura = {
+    pagina: doc.internal.getNumberOfPages(),
+    yLinha: y + 8,
+    associadaX: col1X,
+    cdlX: col2X,
+  };
   doc.line(col1X, y + 8, col1X + colW, y + 8);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
@@ -2644,6 +2652,17 @@ function clearSignature() {
   document.getElementById('signError').style.display = 'none';
 }
 
+// posição (em % da página) da assinatura em cima da linha desenhada no contrato
+function posicaoAssinatura(coluna) {
+  const l = window.__linhasAssinatura;
+  if (!l) return { pagina: 1, x: coluna === 'cdlX' ? 58 : 8, y: 80 };
+  return {
+    pagina: l.pagina,
+    x: Math.round(((l[coluna] + 2) / 210) * 1000) / 10,
+    y: Math.max(1, Math.round(((l.yLinha - 16) / 297) * 1000) / 10),
+  };
+}
+
 async function confirmSignature(evt) {
   const btn = evt?.currentTarget || document.getElementById('startAutentiqueBtn');
   const errorBox = document.getElementById('signError');
@@ -2673,6 +2692,17 @@ async function confirmSignature(evt) {
         tituloDocumento: `Ficha de Adesão CDL Mossoró — ${contato.empresa || contato.nome}`,
         pdfBase64,
         paginaAssinatura,
+        // formato novo: a empresa assina primeiro (link) e a CDL depois, por
+        // e-mail — a assinatura da CDL é a aprovação da associação
+        signers: [
+          {
+            nome: document.getElementById('diretorResponsavel').value || contato.nome,
+            posicoes: [posicaoAssinatura('associadaX')],
+          },
+        ],
+        assinaturaCdl: true,
+        emOrdem: true,
+        posicoesCdl: [posicaoAssinatura('cdlX')],
       }),
     });
     const data = await response.json();
@@ -2722,7 +2752,12 @@ async function verifyAutentique(evt) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Não foi possível consultar a assinatura.');
     autentiqueSignature = Object.assign(autentiqueSignature, data);
-    if (!data.completed) {
+    // com a CDL como segunda assinante, o documento só fica "completo" depois
+    // que ela assina; pra empresa, basta a assinatura dela (a 1ª da lista)
+    const empresaAssinou = Array.isArray(data.signers) && data.signers.length ? !!data.signers[0].signed : !!data.completed;
+    const faltaCdl = empresaAssinou && !data.completed;
+    if (empresaAssinou) autentiqueSignature.empresaAssinou = true;
+    if (!empresaAssinou) {
       document.getElementById('signedTs').textContent =
         'A assinatura ainda não foi concluída. Finalize na Autentique e tente novamente.';
       return;
@@ -2731,8 +2766,9 @@ async function verifyAutentique(evt) {
     signedAtGlobal = data.signers?.[0]?.signedAt || new Date().toISOString();
     document.getElementById('autentiqueStatusIcon').textContent = '✓';
     document.getElementById('autentiqueStatusTitle').textContent = 'Contrato assinado e confirmado';
-    document.getElementById('signedTs').textContent =
-      'A Autentique confirmou a assinatura com sucesso.';
+    document.getElementById('signedTs').textContent = faltaCdl
+      ? 'Sua assinatura foi confirmada. Agora a CDL Mossoró aprova a associação — você não precisa fazer mais nada.'
+      : 'A Autentique confirmou a assinatura com sucesso.';
     if (data.signedFile) {
       const link = document.getElementById('downloadSignedPdfBtn');
       link.href = data.signedFile;
@@ -2759,7 +2795,8 @@ async function verificarRetornoAutentique() {
     document.hidden ||
     verificandoRetornoAutentique ||
     !autentiqueSignature?.documentId ||
-    autentiqueSignature?.completed
+    autentiqueSignature?.completed ||
+    autentiqueSignature?.empresaAssinou
   )
     return;
   verificandoRetornoAutentique = true;
@@ -3413,7 +3450,7 @@ async function finalizarAdesao(evt) {
     empresa: contato.empresa,
     nome: contato.nome,
     email: contato.email,
-    contrato_assinado: !!autentiqueSignature?.completed,
+    contrato_assinado: !!(autentiqueSignature?.completed || autentiqueSignature?.empresaAssinou),
     assinatura_base64: null,
     assinatura_digital: autentiqueSignature
       ? {
@@ -3423,6 +3460,7 @@ async function finalizarAdesao(evt) {
           sign_url: autentiqueSignature.signUrl,
           status: autentiqueSignature.status,
           completed: !!autentiqueSignature.completed,
+          empresa_assinou: !!(autentiqueSignature.completed || autentiqueSignature.empresaAssinou),
           signed_file: autentiqueSignature.signedFile || null,
           signed_at: autentiqueSignature.signers?.[0]?.signedAt || null,
         }
