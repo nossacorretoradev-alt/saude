@@ -1217,7 +1217,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
           <div class="field">
             <label for="valorAtual">Valor total mensal atual (R$)</label>
-            <input type="number" id="valorAtual" placeholder="Ex: 1450" min="0">
+            <input type="text" id="valorAtual" inputmode="decimal" placeholder="Ex: 1.450,90" autocomplete="off" oninput="mascaraValorAtual(this)">
             <div class="field-error" id="valorAtualError">Esse valor parece baixo demais pra um plano de saúde — confira se digitou certo, ou deixe em branco.</div>
           </div>
         </div>
@@ -2950,6 +2950,24 @@ function setFaturaMode(mode) {
   document.getElementById('manualFields').style.display = mode === 'manual' ? 'block' : 'none';
 }
 
+// valor em reais digitado pelo cliente: aceita centavos (1.450,90 / 1450,90 / 1450.9)
+function mascaraValorAtual(el) {
+  const d = String(el.value || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  if (!d) {
+    el.value = '';
+    return;
+  }
+  const n = Number(d) / 100;
+  el.value = n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function valorEmReais(txt) {
+  let t = String(txt || '').trim().replace(/[R$\s]/g, '');
+  if (!t) return 0;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if ((t.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t);
+  return isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
 function formatBRL(v) {
   return Number(v || 0).toLocaleString('pt-BR', {
     style: 'currency',
@@ -2994,7 +3012,7 @@ function planDiffChips(key) {
 
 function renderResultsStep() {
   const totalVidas = totalVidasSim();
-  const valorAtualInformado = Number(document.getElementById('valorAtual').value || 0);
+  const valorAtualInformado = valorEmReais(document.getElementById('valorAtual').value);
   const entries = Object.entries(PLAN_VALUES).map(([key, p]) => ({
     key,
     ...p,
@@ -3107,7 +3125,7 @@ function aplicarPlanoATodosSim(planKey) {
 
 function goToResults() {
   const valorEl = document.getElementById('valorAtual');
-  const valor = Number(valorEl.value || 0);
+  const valor = valorEmReais(valorEl.value);
   // Ninguém paga menos de ~R$80/mês por um plano de saúde — se vier algo abaixo disso,
   // é quase certo que foi digitado sem querer (ex: "3" em vez de "1300"). Barra e avisa.
   if (valor > 0 && valor < 80) {
@@ -3487,7 +3505,7 @@ async function finalizarAdesao(evt) {
       quantidadeDependentes: Number(t.dependentes) || 0,
     })),
     administradora_atual: administradoraAtual,
-    valor_atual: valorAtual ? Number(valorAtual) : null,
+    valor_atual: valorAtual ? valorEmReais(valorAtual) || null : null,
     qtd_vidas: n, // quantidade informada — os dados de cada pessoa são completados depois, pelo link individual
     vendedor_codigo: vendedorCodigo || null,
     plano_cdl_escolhido: chosenCdlTier ? CDL_TIERS[chosenCdlTier].nome : null,
