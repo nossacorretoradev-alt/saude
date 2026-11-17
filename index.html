@@ -1778,6 +1778,7 @@ function showStepId(id) {
     sucesso: 'Concluído',
   };
   document.getElementById('stepsLabel').textContent = nice[id] || '';
+  if (id !== 'intro' && id !== 'sucesso') registrarAndamentoSimulacao(nice[id] || id);
   if (SKIP_INITIAL_SCROLL) {
     SKIP_INITIAL_SCROLL = false;
   } else {
@@ -1785,6 +1786,73 @@ function showStepId(id) {
       behavior: 'smooth',
       block: 'start',
     });
+  }
+}
+
+// ===== Lead desde o início =====
+// Cada simulação tem um código. A cada etapa nova, o simulador grava o que a
+// pessoa já preencheu (parcial). O portal junta tudo da mesma simulação num
+// card só no Pipeline, então quem desiste no meio não se perde.
+const SESSAO_SIMULACAO = (() => {
+  try {
+    return crypto.randomUUID();
+  } catch (e) {
+    return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+})();
+let ETAPAS_REGISTRADAS = new Set();
+let COLUNAS_ANDAMENTO_OK = true;
+function dadosParciaisSimulacao() {
+  const contato = getNomeEmailAtual();
+  const temPlano = SIM_TITULARES.some((t) => t.planoKey);
+  return {
+    cnpj: document.getElementById('cnpj')?.value || '',
+    celular: getCelularAtual(),
+    associado: isAssociado,
+    novo_afiliado: isAssociado === false,
+    empresa: contato.empresa || '',
+    nome: contato.nome || '',
+    email: contato.email || '',
+    vendedor_codigo: vendedorCodigo || null,
+    plano_cdl_escolhido: chosenCdlTier ? CDL_TIERS[chosenCdlTier].nome : null,
+    qtd_vidas: temPlano ? totalVidasSim() : null,
+    grupos: temPlano
+      ? SIM_TITULARES.map((t, i) => ({
+          titular: nomeTitularSim(i),
+          planoKey: t.planoKey,
+          plano: PLAN_VALUES[t.planoKey]?.nome || '',
+          quantidadeDependentes: Number(t.dependentes) || 0,
+        }))
+      : null,
+    assinatura_digital: autentiqueSignature
+      ? {
+          provider: 'autentique',
+          document_id: autentiqueSignature.documentId,
+          signature_id: autentiqueSignature.signatureId,
+          sign_url: autentiqueSignature.signUrl,
+          status: autentiqueSignature.status,
+          completed: !!autentiqueSignature.completed,
+          empresa_assinou: !!(autentiqueSignature.completed || autentiqueSignature.empresaAssinou),
+        }
+      : null,
+    vidas: [],
+    sessao_id: SESSAO_SIMULACAO,
+    parcial: true,
+  };
+}
+async function registrarAndamentoSimulacao(etapa) {
+  // só registra quando já tem CNPJ válido, e uma vez por etapa
+  if (!COLUNAS_ANDAMENTO_OK || onlyDigits(document.getElementById('cnpj')?.value || '').length !== 14) return;
+  if (ETAPAS_REGISTRADAS.has(etapa)) return;
+  ETAPAS_REGISTRADAS.add(etapa);
+  try {
+    const { error } = await supabaseClient.from('leads').insert({ ...dadosParciaisSimulacao(), etapa_simulador: etapa });
+    if (error) {
+      console.warn('Andamento da simulação não registrado:', error);
+      if (/sessao_id|parcial|etapa_simulador|column/i.test(error.message || '')) COLUNAS_ANDAMENTO_OK = false;
+    }
+  } catch (e) {
+    console.warn('Andamento da simulação não registrado:', e);
   }
 }
 
@@ -2697,6 +2765,10 @@ async function confirmSignature(evt) {
         signers: [
           {
             nome: document.getElementById('diretorResponsavel').value || contato.nome,
+            // com e-mail válido a própria Autentique manda o contrato por e-mail
+            // (o link continua abrindo aqui na hora também)
+            email: (document.getElementById('emailDiretor').value || contato.email || '').trim(),
+            porEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((document.getElementById('emailDiretor').value || contato.email || '').trim()),
             posicoes: [posicaoAssinatura('associadaX')],
           },
         ],
@@ -2719,6 +2791,7 @@ async function confirmSignature(evt) {
     document.getElementById('signConfirmed').style.display = 'block';
     document.getElementById('downloadSignedPdfBtn').href = data.signUrl;
     window.open(data.signUrl, '_blank', 'noopener');
+    registrarAndamentoSimulacao('Contrato enviado para assinatura');
   } catch (error) {
     console.error('Autentique create', error);
     errorBox.textContent = error.message || 'Não foi possível iniciar a assinatura.';
@@ -3510,12 +3583,20 @@ async function finalizarAdesao(evt) {
     vendedor_codigo: vendedorCodigo || null,
     plano_cdl_escolhido: chosenCdlTier ? CDL_TIERS[chosenCdlTier].nome : null,
     vidas: [],
+    sessao_id: SESSAO_SIMULACAO,
+    parcial: false,
+    etapa_simulador: 'Concluído',
   };
   console.log('Lead + adesão:', payload);
 
   let enviadoComSucesso = false;
   try {
     let { error } = await supabaseClient.from('leads').insert(payload);
+    // banco sem as colunas de andamento: grava sem elas
+    if (error && /sessao_id|parcial|etapa_simulador/i.test(error.message || '')) {
+      const { sessao_id, parcial, etapa_simulador, ...semAndamento } = payload;
+      ({ error } = await supabaseClient.from('leads').insert(semAndamento));
+    }
     // Se a coluna "grupos" ainda não existir no banco, grava sem ela em vez de
     // perder a adesão do cliente (o total de vidas e o plano continuam indo).
     if (error && /grupos/i.test(error.message || '')) {
