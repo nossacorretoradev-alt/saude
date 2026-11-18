@@ -888,8 +888,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <!-- CONTATO (apenas associado — não associado já preenche isso na ficha de adesão) -->
       <div class="q-step" id="step-contatoAssociado">
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><div class="q-eyebrow">Contato</div></div>
-        <h2 class="q-title">Só mais um passo</h2>
-        <p class="q-sub">Seu e-mail já está confirmado. Falta só seu nome e celular pra gente te enviar a cotação.</p>
+        <h2 class="q-title" id="contatoTitulo">Só mais um passo</h2>
+        <p class="q-sub" id="contatoSub">Seu e-mail já está confirmado. Falta só seu nome e celular para continuar. No final você baixa o orçamento.</p>
         <div class="field">
           <label for="nomeAssociado">Nome</label>
           <input type="text" id="nomeAssociado" placeholder="Seu nome">
@@ -897,6 +897,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <div class="field">
           <label for="celularAssociado">Celular / WhatsApp</label>
           <input type="text" id="celularAssociado" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+        </div>
+        <div class="field" id="field-emailContato" style="display:none;">
+          <label for="emailContato">E-mail</label>
+          <input type="email" id="emailContato" placeholder="seu@email.com.br" autocomplete="email">
         </div>
         <div class="q-actions">
           <button class="btn btn-ghost" onclick="prev()">Voltar</button>
@@ -907,17 +911,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <!-- STATUS: NÃO ASSOCIADO -->
       <div class="q-step" id="step-statusWarn">
         <div class="step-head"><span class="step-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span><div class="q-eyebrow">Verificação</div></div>
-        <h2 class="q-title">CNPJ não encontrado na base CDL</h2>
+        <h2 class="q-title">Falta só a associação à CDL</h2>
         <div class="status-card warn">
           <div class="status-icon">i</div>
           <div>
-            <h4>É preciso ser associado(a) da CDL para fechar o plano</h4>
-            <p>As condições especiais do plano de saúde são exclusivas para empresas associadas à CDL Mossoró. Sua empresa ainda não consta na nossa base — por isso, antes de simular o plano, vamos preencher juntos a ficha de adesão à CDL. É rápido, e você já assina direto por aqui.</p>
+            <h4>Sua empresa ainda não é associada da CDL Mossoró</h4>
+            <p>As condições deste plano de saúde são exclusivas para empresas associadas à CDL Mossoró. Para contratar, é só se associar agora: você escolhe a categoria e assina a ficha da CDL aqui mesmo. Se preferir, um consultor da Nossa Corretora fala com você.</p>
           </div>
         </div>
-        <div class="q-actions">
+        <div class="q-actions" style="flex-wrap:wrap;">
           <button class="btn btn-ghost" onclick="prev()">Voltar</button>
-          <button class="btn btn-primary" onclick="next()">Escolher meu plano CDL</button>
+          <button class="btn btn-ghost" onclick="falarComConsultor(event)">Falar com um consultor</button>
+          <button class="btn btn-primary" onclick="next()">Quero me associar</button>
         </div>
       </div>
 
@@ -1146,10 +1151,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="q-step" id="step-affiliateWelcome">
         <div class="success-icon">✓</div>
         <div class="q-eyebrow" style="text-align:center">Bem-vindo(a) à CDL Mossoró</div>
-        <h2 class="q-title" style="text-align:center">Parabéns, sua filiação foi confirmada!</h2>
-        <p class="q-sub" style="text-align:center">A partir de agora sua empresa é associada da CDL Mossoró. O próximo passo é simular e contratar seu plano de saúde com as condições exclusivas da parceria com a Unimed.</p>
+        <h2 class="q-title" style="text-align:center">Ficha da CDL assinada!</h2>
+        <p class="q-sub" style="text-align:center">Sua associação à CDL Mossoró foi enviada. Agora é só concluir: nosso time recebe sua cotação do plano de saúde e entra em contato para finalizar a adesão.</p>
         <div class="q-actions">
-          <button class="btn btn-primary btn-block" onclick="next()">Adquirir plano de saúde</button>
+          <button class="btn btn-primary btn-block" onclick="finalizarAdesao(event)">Concluir adesão ao plano</button>
         </div>
       </div>
 
@@ -1765,7 +1770,8 @@ function showStepId(id) {
     cnpj: 'CNPJ',
     statusOk: 'Verificação',
     emailVerify: 'Verificação por e-mail',
-    statusWarn: 'Verificação',
+    statusWarn: 'Associação à CDL',
+    planoCDL: 'Categoria CDL',
     contractForm: 'Ficha de adesão',
     contractPreview: 'Contrato',
     signature: 'Assinatura',
@@ -1778,6 +1784,7 @@ function showStepId(id) {
     sucesso: 'Concluído',
   };
   document.getElementById('stepsLabel').textContent = nice[id] || '';
+  if (id === 'contractForm') preencherFichaComContato();
   if (id !== 'intro' && id !== 'sucesso') registrarAndamentoSimulacao(nice[id] || id);
   if (SKIP_INITIAL_SCROLL) {
     SKIP_INITIAL_SCROLL = false;
@@ -1992,23 +1999,26 @@ async function validateCnpjStep(evt) {
       ];
     }
   } else {
+    // não associado: cota primeiro; a associação à CDL vem no fim, se ele quiser
     flow = [
       'intro',
       'cnpj',
+      'contatoAssociado',
+      'vidas',
+      'planoAtivo',
+      'fatura',
+      'resultado',
       'statusWarn',
       'planoCDL',
       'contractForm',
       'contractPreview',
       'signature',
       'affiliateWelcome',
-      'vidas',
-      'planoAtivo',
-      'fatura',
-      'resultado',
       'sucesso',
     ];
   }
-  idx = 2; // "statusOk" ou "statusWarn" — sempre a 3ª posição (intro, cnpj, status...)
+  ajustarEtapaContato();
+  idx = 2; // 3ª posição: "statusOk" (associado) ou "contatoAssociado" (não associado)
   showStepId(flow[idx]);
 }
 
@@ -2156,14 +2166,50 @@ async function verificarCodigo(evt) {
   }
 }
 
+function ajustarEtapaContato() {
+  const naoAssociado = !isAssociado;
+  document.getElementById('field-emailContato').style.display = naoAssociado ? '' : 'none';
+  document.getElementById('contatoTitulo').textContent = naoAssociado ? 'Seus dados de contato' : 'Só mais um passo';
+  document.getElementById('contatoSub').textContent = naoAssociado
+    ? 'Para montar sua cotação, informe seu nome, celular e e-mail. No final você baixa o orçamento.'
+    : 'Seu e-mail já está confirmado. Falta só seu nome e celular para continuar. No final você baixa o orçamento.';
+}
 function validateContatoAssociado() {
   const nome = document.getElementById('nomeAssociado').value.trim();
   const celular = document.getElementById('celularAssociado').value.trim();
-  if (!nome || !celular) {
+  const email = (document.getElementById('emailContato')?.value || '').trim();
+  if (!nome || onlyDigits(celular).length < 10) {
     alert('Preencha nome e celular para continuar.');
     return;
   }
+  if (!isAssociado && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert('Preencha um e-mail válido para continuar.');
+    return;
+  }
   next();
+}
+// "Quero aderir" na cotação: associado conclui; não associado vai para a associação
+function aderirDepoisDaCotacao(evt) {
+  if (isAssociado) return finalizarAdesao(evt);
+  idx = flow.indexOf('statusWarn');
+  showStepId('statusWarn');
+}
+// não quer se associar agora: a cotação vai para a equipe como lead de atendimento
+function falarComConsultor(evt) {
+  QUER_CONSULTOR = true;
+  return finalizarAdesao(evt);
+}
+let QUER_CONSULTOR = false;
+// leva os dados do contato para a ficha da CDL (o cliente só confere)
+function preencherFichaComContato() {
+  const copia = (de, para) => {
+    const a = document.getElementById(de);
+    const b = document.getElementById(para);
+    if (a && b && !b.value.trim() && a.value.trim()) b.value = a.value.trim();
+  };
+  copia('nomeAssociado', 'diretorResponsavel');
+  copia('emailContato', 'emailDiretor');
+  copia('celularAssociado', 'celularDiretor');
 }
 
 /* ===== FICHA DE ADESÃO / CONTRATO (PDF real, preenchido automaticamente) ===== */
@@ -3183,7 +3229,7 @@ function renderTitularesPlanosSim() {
       </div>
       <div class="q-actions" style="margin-top:14px;">
         <button class="btn btn-ghost" onclick="generateOrcamentoPDF()">Baixar orçamento (PDF)</button>
-        <button class="btn btn-primary" onclick="finalizarAdesao(event)">Quero aderir agora</button>
+        <button class="btn btn-primary" onclick="aderirDepoisDaCotacao(event)">Quero aderir agora</button>
       </div>
     </div>`;
 }
@@ -3217,8 +3263,8 @@ function goToResults() {
 }
 
 function getCelularAtual() {
-  const id = isAssociado ? 'celularAssociado' : 'celularDiretor';
-  return document.getElementById(id)?.value || '';
+  if (isAssociado) return document.getElementById('celularAssociado')?.value || '';
+  return document.getElementById('celularDiretor')?.value || document.getElementById('celularAssociado')?.value || '';
 }
 
 function getNomeEmailAtual() {
@@ -3230,9 +3276,9 @@ function getNomeEmailAtual() {
     };
   }
   return {
-    nome: document.getElementById('diretorResponsavel')?.value || '',
-    email: document.getElementById('emailDiretor')?.value || '',
-    empresa: document.getElementById('razaoSocial')?.value || '',
+    nome: document.getElementById('diretorResponsavel')?.value || document.getElementById('nomeAssociado')?.value || '',
+    email: document.getElementById('emailDiretor')?.value || document.getElementById('emailContato')?.value || '',
+    empresa: document.getElementById('razaoSocial')?.value || (dadosCnpjConsultado && dadosCnpjConsultado.razao_social) || '',
   };
 }
 
@@ -3585,7 +3631,7 @@ async function finalizarAdesao(evt) {
     vidas: [],
     sessao_id: SESSAO_SIMULACAO,
     parcial: false,
-    etapa_simulador: 'Concluído',
+    etapa_simulador: QUER_CONSULTOR ? 'Quer falar com um consultor (não associado)' : 'Concluído',
   };
   console.log('Lead + adesão:', payload);
 
@@ -3618,7 +3664,10 @@ async function finalizarAdesao(evt) {
   document.getElementById('sucessoMsg').textContent = enviadoComSucesso
     ? `Nosso time da CDL recebeu sua adesão pra ${n} vida(s) e vai tratar o restante do processo com você — inclusive o link individual pra completar os dados de cada pessoa.`
     : `Sua adesão foi registrada localmente, mas não conseguimos confirmar o envio ao servidor agora. Nosso time vai validar assim que possível.`;
-  next();
+  if (QUER_CONSULTOR && enviadoComSucesso)
+    document.getElementById('sucessoMsg').textContent = 'Recebemos sua cotação! Um consultor da Nossa Corretora vai falar com você para explicar a associação à CDL e concluir o plano.';
+  idx = flow.indexOf('sucesso');
+  showStepId('sucesso');
 }
 
 showStepId('intro');
